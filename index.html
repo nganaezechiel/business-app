@@ -6,23 +6,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    .box { background: white; padding: 20px; border-radius: 10px; }
+    .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
     h2 { margin-top: 0; }
-    input { width: 100%; padding: 10px; font-size: 18px; margin-top: 10px; }
+    input, select { width: 100%; padding: 10px; font-size: 18px; margin-top: 10px; }
     button { width: 100%; padding: 12px; font-size: 18px; margin-top: 10px; border: none; border-radius: 8px; }
     #add { background: #2ecc71; color: white; }
     #remove { background: #e74c3c; color: white; }
+    #newAcct { background: #3498db; color: white; }
+    .history { max-height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; margin-top: 10px; border-radius: 6px; }
+    .history-item { border-bottom: 1px solid #ddd; padding: 5px 0; }
   </style>
 </head>
 
 <body>
   <div class="box">
-    <h2>Business Cash: <span id="total">Loading...</span> UGX</h2>
+    <h2>Choose Account</h2>
+    <select id="accountSelect"></select>
+    <input id="newAccountName" placeholder="New Account Name">
+    <button id="newAcct">Create Account</button>
+  </div>
 
+  <div class="box">
+    <h2>Total: <span id="total">0</span> UGX</h2>
     <input id="amount" type="number" placeholder="Enter amount">
-
     <button id="add">Add Money</button>
     <button id="remove">Remove Money</button>
+
+    <h3>Transaction History</h3>
+    <div class="history" id="history"></div>
   </div>
 
   <!-- Firebase -->
@@ -42,39 +53,106 @@
   measurementId: "G-21K1R3V7SH"
 };
 
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const totalRef = db.ref("totalMoney");
 
     const totalSpan = document.getElementById("total");
+    const historyDiv = document.getElementById("history");
+    const accountSelect = document.getElementById("accountSelect");
 
-    // Listen for changes in real-time
-    totalRef.on("value", (snapshot) => {
-      const val = snapshot.val();
-      totalSpan.innerText = val ?? 0;
-    });
+    let currentAccount = null;
 
-    async function updateTotal(delta) {
-      const snapshot = await totalRef.get();
-      let current = snapshot.val() ?? 0;
-      current += delta;
-      totalRef.set(current);
+    // ---- Account Functions ----
+    async function loadAccounts() {
+      const snapshot = await db.ref("accounts").get();
+      const accounts = snapshot.val() || {};
+      accountSelect.innerHTML = "";
+      for (let key in accounts) {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = accounts[key].name;
+        accountSelect.appendChild(option);
+      }
+      if (!currentAccount && Object.keys(accounts).length > 0) {
+        currentAccount = Object.keys(accounts)[0];
+      }
+      accountSelect.value = currentAccount;
+      if (currentAccount) loadAccountData(currentAccount);
+    }
+
+    async function createAccount() {
+      const name = document.getElementById("newAccountName").value.trim();
+      if (!name) return alert("Enter a name");
+      const newRef = db.ref("accounts").push();
+      await newRef.set({ name, total: 0 });
+      document.getElementById("newAccountName").value = "";
+      currentAccount = newRef.key;
+      await loadAccounts();
+    }
+
+    accountSelect.onchange = () => {
+      currentAccount = accountSelect.value;
+      loadAccountData(currentAccount);
+    }
+
+    // ---- Load Account Data ----
+    function loadAccountData(accountKey) {
+      const totalRef = db.ref(`accounts/${accountKey}/total`);
+      totalRef.on("value", (snap) => {
+        totalSpan.innerText = snap.val() ?? 0;
+      });
+
+      const historyRef = db.ref(`accounts/${accountKey}/history`);
+      historyRef.on("value", (snap) => {
+        const val = snap.val() || {};
+        historyDiv.innerHTML = "";
+        const entries = Object.values(val).sort((a,b)=>b.timestamp - a.timestamp);
+        for (let item of entries) {
+          const div = document.createElement("div");
+          div.className = "history-item";
+          const date = new Date(item.timestamp).toLocaleString();
+          div.textContent = `${item.type === "add" ? "+" : "-"}${item.amount} UGX — ${date}`;
+          historyDiv.appendChild(div);
+        }
+      });
+    }
+
+    // ---- Transaction Functions ----
+    async function addTransaction(amount, type) {
+      if (!currentAccount) return alert("Select an account");
+      const totalRef = db.ref(`accounts/${currentAccount}/total`);
+      const totalSnap = await totalRef.get();
+      let total = totalSnap.val() ?? 0;
+      total += type === "add" ? amount : -amount;
+      await totalRef.set(total);
+
+      const histRef = db.ref(`accounts/${currentAccount}/history`);
+      await histRef.push({
+        amount,
+        type,
+        timestamp: Date.now()
+      });
     }
 
     document.getElementById("add").onclick = () => {
       const val = Number(document.getElementById("amount").value);
       if (!val) return;
-      updateTotal(val);
+      addTransaction(val, "add");
       document.getElementById("amount").value = "";
-    };
+    }
 
     document.getElementById("remove").onclick = () => {
       const val = Number(document.getElementById("amount").value);
       if (!val) return;
-      updateTotal(-val);
+      addTransaction(val, "remove");
       document.getElementById("amount").value = "";
-    };
+    }
+
+    document.getElementById("newAcct").onclick = createAccount;
+
+    // ---- Initial Load ----
+    loadAccounts();
+
   </script>
 </body>
 </html>
