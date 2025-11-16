@@ -1,291 +1,299 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Cash App!</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    /* --- Body & Background --- */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(to right, #ff4d4d, #ffe066, #5cd65c, #66ccff); /* Christmas gradient */
-      height: 100vh;
-      color: #fff;
-      overflow: hidden;
-    }
-    h1 {
-      text-align: center;
-      padding: 15px;
-      margin: 0;
-      font-size: 2em;
-      text-shadow: 2px 2px 4px #000;
-    }
-
-    /* --- Layout --- */
-    #container {
-      display: flex;
-      height: calc(100vh - 60px);
-    }
-    .segment {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.2);
-      margin: 5px;
-      border-radius: 12px;
-    }
-
-    /* --- Segment 1: Accounts --- */
-    #accountsList {
-      margin-top: 10px;
-    }
-    .account-item {
-      background: rgba(255,255,255,0.3);
-      padding: 8px;
-      margin-bottom: 5px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .account-item.selected {
-      background: rgba(255,255,255,0.6);
-      color: #000;
-      font-weight: bold;
-    }
-
-    /* --- Segment 2: Account Details --- */
-    .account-details input, .account-details textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-    .account-details button {
-      width: 48%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #addMoneyBtn { background: #2ecc71; color: #fff; }
-    #removeMoneyBtn { background: #e74c3c; color: #fff; }
-
-    /* --- Segment 3: Transaction History --- */
-    .history {
-      max-height: 100%;
-      overflow-y: auto;
-      background: rgba(255,255,255,0.3);
-      padding: 10px;
-      border-radius: 8px;
-    }
-    .history-item {
-      border-bottom: 1px solid rgba(255,255,255,0.5);
-      padding: 5px 0;
-    }
-    .history-item.add {
-      color: #2ecc71;
-      font-weight: bold;
-    }
-    .history-item.remove {
-      color: #e74c3c;
-      font-weight: bold;
-    }
-
-    /* --- Segment 4: Extra space --- */
-    #extra {
-      background: rgba(255,255,255,0.3);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5em;
-      font-weight: bold;
-    }
-
-    button:hover {
-      opacity: 0.9;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Cash App!</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {font-family: Arial, sans-serif; margin:0; padding:0; background: linear-gradient(to right, #ff4d4d, #ffe066, #5cd65c, #66ccff); color:#fff;}
+  h1, h2 {text-align:center; margin:0; text-shadow:2px 2px 4px #000;}
+  #container{display:flex; height:calc(100vh - 60px);}
+  .segment{flex:1; padding:15px; overflow-y:auto; background: rgba(0,0,0,0.2); margin:5px; border-radius:12px; box-shadow:2px 2px 12px rgba(0,0,0,0.3);}
+  .account-item{background: rgba(255,255,255,0.3); padding:8px; margin-bottom:5px; border-radius:6px; cursor:pointer;}
+  .account-item.selected{background: rgba(255,255,255,0.6); color:#000; font-weight:bold;}
+  .account-details input, .account-details textarea{width:100%; padding:10px; margin-top:10px; border-radius:8px; border:none; font-size:16px;}
+  .account-details button{width:48%; padding:12px; margin-top:10px; font-size:18px; border:none; border-radius:8px; cursor:pointer;}
+  #addMoneyBtn{background:#2ecc71; color:#fff;}
+  #removeMoneyBtn{background:#e74c3c; color:#fff;}
+  .history{max-height:100%; overflow-y:auto; background: rgba(255,255,255,0.3); padding:10px; border-radius:8px;}
+  .history-item{border-bottom:1px solid rgba(255,255,255,0.5); padding:5px 0;}
+  .history-item.add{color:#006600; font-weight:bold;} /* darker green for readability */
+  .history-item.remove{color:#e74c3c; font-weight:bold;}
+  #extra{background: rgba(255,255,255,0.3); display:flex; justify-content:center; align-items:center; font-size:1.5em; font-weight:bold;}
+  button:hover{opacity:0.9;}
+  #welcome{display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh;}
+  #welcome button{margin:10px; padding:15px 25px; font-size:20px; border:none; border-radius:10px; cursor:pointer;}
+  #loginSection{display:none; flex-direction:column; justify-content:center; align-items:center; height:100vh;}
+</style>
 </head>
 <body>
-  <h1>Cash App!</h1>
-  <div id="container">
-    <!-- Segment 1: Accounts -->
-    <div class="segment" id="segment1">
-      <h2>Accounts</h2>
-      <input id="newAccountName" placeholder="New Account Name">
+
+<div id="welcome">
+  <h1>Welcome to Cash App!</h1>
+  <button id="adminBtn">Admin</button>
+  <button id="userBtn">User</button>
+</div>
+
+<div id="loginSection">
+  <h2 id="loginTitle"></h2>
+  <input type="password" id="loginPassword" placeholder="Enter password/PIN">
+  <button id="loginSubmit">Login</button>
+</div>
+
+<div id="container" style="display:none;">
+  <!-- Segment 1: Accounts -->
+  <div class="segment" id="segment1">
+    <h2>Accounts</h2>
+    <div id="adminControls" style="display:none;">
+      <input id="newAccountFullName" placeholder="Full Name">
+      <input id="newAccountAlias" placeholder="Alias (shown to users)">
+      <input id="newAccountAge" placeholder="Age">
+      <input id="newAccountGender" placeholder="Gender">
+      <input id="newAccountPin" placeholder="4-digit PIN">
       <button id="newAcct">Create Account</button>
       <button id="deleteAcct" style="background:#ff4d4d; color:#fff;">Delete Account</button>
-      <div id="accountsList"></div>
     </div>
+    <div id="accountsList"></div>
+  </div>
 
-    <!-- Segment 2: Account Details -->
-    <div class="segment account-details" id="segment2">
-      <h2>Account Details</h2>
-      <p>Total: <span id="total">0</span> UGX</p>
-      <input id="amount" type="number" placeholder="Enter amount">
-      <textarea id="reason" placeholder="Reason / Comment"></textarea>
-      <div style="display:flex; justify-content:space-between;">
-        <button id="addMoneyBtn">Add Money</button>
-        <button id="removeMoneyBtn">Remove Money</button>
-      </div>
-    </div>
-
-    <!-- Segment 3: Transaction History -->
-    <div class="segment" id="segment3">
-      <h2>Transaction History</h2>
-      <div class="history" id="history"></div>
-    </div>
-
-    <!-- Segment 4: Extra Space -->
-    <div class="segment" id="extra">
-      Extra Space
+  <!-- Segment 2: Account Details -->
+  <div class="segment account-details" id="segment2">
+    <h2>Account Details</h2>
+    <p id="userFullName"></p>
+    <p>Total: <span id="total">0</span> UGX</p>
+    <input id="amount" type="number" placeholder="Enter amount">
+    <textarea id="reason" placeholder="Reason / Comment"></textarea>
+    <div style="display:flex; justify-content:space-between;">
+      <button id="addMoneyBtn">Add Money</button>
+      <button id="removeMoneyBtn">Remove Money</button>
     </div>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Segment 3: Transaction History -->
+  <div class="segment" id="segment3">
+    <h2>Transaction History</h2>
+    <div class="history" id="history"></div>
+  </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDbW2RuOnSr4H7Cl0_CLu99ckPbrh2y4Gw",
-      authDomain: "business-app-data.firebaseapp.com",
-      databaseURL: "https://business-app-data-default-rtdb.firebaseio.com",
-      projectId: "business-app-data",
-      storageBucket: "business-app-data.firebasestorage.app",
-      messagingSenderId: "64963134720",
-      appId: "1:64963134720:web:f8dd72fbe82342b1f91fe5",
-      measurementId: "G-21K1R3V7SH"
+  <!-- Segment 4: Extra Space -->
+  <div class="segment" id="extra">
+    Extra Space
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDbW2RuOnSr4H7Cl0_CLu99ckPbrh2y4Gw",
+  authDomain: "business-app-data.firebaseapp.com",
+  databaseURL: "https://business-app-data-default-rtdb.firebaseio.com",
+  projectId: "business-app-data",
+  storageBucket: "business-app-data.firebasestorage.app",
+  messagingSenderId: "64963134720",
+  appId: "1:64963134720:web:f8dd72fbe82342b1f91fe5",
+  measurementId: "G-21K1R3V7SH"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let isAdmin=false;
+let currentAccount=null;
+let currentUser=null;
+
+const welcomeDiv = document.getElementById("welcome");
+const loginSection = document.getElementById("loginSection");
+const loginTitle = document.getElementById("loginTitle");
+const loginPassword = document.getElementById("loginPassword");
+const loginSubmit = document.getElementById("loginSubmit");
+
+const totalSpan = document.getElementById("total");
+const historyDiv = document.getElementById("history");
+const accountsList = document.getElementById("accountsList");
+const userFullName = document.getElementById("userFullName");
+
+const adminControls = document.getElementById("adminControls");
+const amountInput = document.getElementById("amount");
+const reasonInput = document.getElementById("reason");
+const addBtn = document.getElementById("addMoneyBtn");
+const removeBtn = document.getElementById("removeMoneyBtn");
+
+document.getElementById("adminBtn").onclick = ()=>{
+  isAdmin=true;
+  welcomeDiv.style.display="none";
+  loginSection.style.display="flex";
+  loginTitle.innerText="Admin Login";
+}
+
+document.getElementById("userBtn").onclick = ()=>{
+  isAdmin=false;
+  welcomeDiv.style.display="none";
+  loginSection.style.display="flex";
+  loginTitle.innerText="User Login";
+}
+
+// ------------------ Login Handling ------------------
+loginSubmit.onclick = async ()=>{
+  const pass = loginPassword.value.trim();
+  loginPassword.value="";
+  if(isAdmin){
+    const snap = await db.ref("admin/password").get();
+    if(!snap.exists()){
+      // First time setup
+      await db.ref("admin/password").set(pass);
+      alert("Admin password set!");
+      showApp();
+    } else if(snap.val()===pass){
+      showApp();
+    } else {
+      alert("Incorrect password!");
+    }
+  } else {
+    // User login selects account
+    currentUser=null;
+    const aliasSnap = await db.ref("accounts").get();
+    const accounts = aliasSnap.val()||{};
+    let found=false;
+    for(let key in accounts){
+      if(accounts[key].alias && accounts[key].alias===pass){ // here 'pass' is alias for demo
+        currentAccount=key;
+        found=true;
+        // now ask for PIN
+        const pin = prompt("Enter 4-digit PIN for this account:");
+        if(pin===accounts[key].pin){
+          currentUser = key;
+          showApp();
+          userFullName.innerText = "Name: " + accounts[key].fullName;
+        } else {
+          alert("Incorrect PIN");
+        }
+      }
+    }
+    if(!found) alert("Alias not found");
+  }
+}
+
+// ------------------ Show App ------------------
+function showApp(){
+  loginSection.style.display="none";
+  document.getElementById("container").style.display="flex";
+  adminControls.style.display = isAdmin ? "block" : "none";
+  addBtn.style.display = isAdmin ? "inline-block" : "none";
+  removeBtn.style.display = isAdmin ? "inline-block" : "none";
+  loadAccounts();
+}
+
+// ------------------ Load Accounts ------------------
+async function loadAccounts(){
+  const snap = await db.ref("accounts").get();
+  const accounts = snap.val()||{};
+  accountsList.innerHTML="";
+  for(let key in accounts){
+    const div = document.createElement("div");
+    div.className="account-item";
+    div.textContent = accounts[key].alias;
+    div.dataset.key=key;
+    div.onclick= async ()=>{
+      if(isAdmin){
+        currentAccount=key;
+        loadAccountData(key);
+      } else {
+        if(key!==currentUser){
+          alert("You can only access your own account");
+          return;
+        }
+        currentAccount=key;
+        loadAccountData(key);
+      }
     };
+    accountsList.appendChild(div);
+  }
+  if(isAdmin && Object.keys(accounts).length>0){
+    currentAccount=Object.keys(accounts)[0];
+    loadAccountData(currentAccount);
+  }
+}
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+// ------------------ Create/Delete Account ------------------
+document.getElementById("newAcct").onclick=async ()=>{
+  const fullName = document.getElementById("newAccountFullName").value.trim();
+  const alias = document.getElementById("newAccountAlias").value.trim();
+  const age = document.getElementById("newAccountAge").value.trim();
+  const gender = document.getElementById("newAccountGender").value.trim();
+  const pin = document.getElementById("newAccountPin").value.trim();
+  if(!fullName || !alias || !pin) return alert("Full Name, Alias and PIN required");
+  const newRef = db.ref("accounts").push();
+  await newRef.set({fullName, alias, age, gender, pin, total:0});
+  document.getElementById("newAccountFullName").value="";
+  document.getElementById("newAccountAlias").value="";
+  document.getElementById("newAccountAge").value="";
+  document.getElementById("newAccountGender").value="";
+  document.getElementById("newAccountPin").value="";
+  loadAccounts();
+};
 
-    const totalSpan = document.getElementById("total");
-    const historyDiv = document.getElementById("history");
-    const accountsList = document.getElementById("accountsList");
-    const newAccountName = document.getElementById("newAccountName");
-    const reasonInput = document.getElementById("reason");
-
-    let currentAccount = null;
-
-    // ---- Load Accounts ----
-    async function loadAccounts() {
-      const snapshot = await db.ref("accounts").get();
-      const accounts = snapshot.val() || {};
-      accountsList.innerHTML = "";
-      for (let key in accounts) {
-        const div = document.createElement("div");
-        div.className = "account-item";
-        div.textContent = accounts[key].name;
-        div.dataset.key = key;
-        if(key===currentAccount) div.classList.add("selected");
-        div.onclick = () => {
-          currentAccount = key;
-          loadAccountData(key);
-          updateSelected();
-        }
-        accountsList.appendChild(div);
-      }
-      if(!currentAccount && Object.keys(accounts).length>0){
-        currentAccount = Object.keys(accounts)[0];
-        loadAccountData(currentAccount);
-      }
-    }
-
-    function updateSelected() {
-      document.querySelectorAll('.account-item').forEach(item=>{
-        item.classList.toggle('selected', item.dataset.key===currentAccount);
-      });
-    }
-
-    // ---- Create / Delete Account ----
-    async function createAccount() {
-      const name = newAccountName.value.trim();
-      if(!name) return alert("Enter a name");
-      const newRef = db.ref("accounts").push();
-      await newRef.set({name, total:0});
-      newAccountName.value = "";
-      currentAccount = newRef.key;
-      await loadAccounts();
-    }
-
-    async function deleteAccount() {
-      if(!currentAccount) return alert("Select account");
-      if(confirm("Delete this account and all its data?")) {
-        await db.ref(`accounts/${currentAccount}`).remove();
-        currentAccount = null;
-        await loadAccounts();
-      }
-    }
-
-    document.getElementById("newAcct").onclick = createAccount;
-    document.getElementById("deleteAcct").onclick = deleteAccount;
-
-    // ---- Load Account Data ----
-    function loadAccountData(accountKey){
-      const totalRef = db.ref(`accounts/${accountKey}/total`);
-      totalRef.on("value", snap=> totalSpan.innerText = snap.val() ?? 0);
-
-      const historyRef = db.ref(`accounts/${accountKey}/history`);
-      historyRef.on("value", snap=>{
-        const val = snap.val()||{};
-        historyDiv.innerHTML="";
-        const entries = Object.values(val).sort((a,b)=>b.timestamp - a.timestamp);
-        for(let item of entries){
-          const div = document.createElement("div");
-          div.className = "history-item " + (item.type==="add" ? "add" : "remove");
-          const date = new Date(item.timestamp).toLocaleString();
-          div.textContent = `${item.type==="add"?"+":"-"}${item.amount} UGX — ${item.comment||""} — ${date}`;
-          historyDiv.appendChild(div);
-        }
-      });
-      updateSelected();
-    }
-
-    // ---- Add / Remove Money with reason ----
-    async function addTransaction(amount,type,comment){
-      if(!currentAccount) return alert("Select an account");
-      const totalRef = db.ref(`accounts/${currentAccount}/total`);
-      const totalSnap = await totalRef.get();
-      let total = totalSnap.val()||0;
-      total += type==="add"?amount:-amount;
-      await totalRef.set(total);
-
-      const histRef = db.ref(`accounts/${currentAccount}/history`);
-      await histRef.push({
-        amount,
-        type,
-        comment,
-        timestamp: Date.now()
-      });
-    }
-
-    document.getElementById("addMoneyBtn").onclick = ()=>{
-      const val = Number(document.getElementById("amount").value);
-      const comment = reasonInput.value.trim();
-      if(!val) return;
-      addTransaction(val,"add",comment);
-      document.getElementById("amount").value="";
-      reasonInput.value="";
-    }
-
-    document.getElementById("removeMoneyBtn").onclick = ()=>{
-      const val = Number(document.getElementById("amount").value);
-      const comment = reasonInput.value.trim();
-      if(!val) return;
-      addTransaction(val,"remove",comment);
-      document.getElementById("amount").value="";
-      reasonInput.value="";
-    }
-
-    // ---- Initial load ----
+document.getElementById("deleteAcct").onclick=async ()=>{
+  if(!currentAccount) return alert("Select account");
+  if(confirm("Delete this account and all its data?")){
+    await db.ref("accounts/"+currentAccount).remove();
+    currentAccount=null;
     loadAccounts();
-  </script>
+  }
+};
+
+// ------------------ Load Account Data ------------------
+function loadAccountData(key){
+  const totalRef = db.ref("accounts/"+key+"/total");
+  totalRef.on("value", snap=> totalSpan.innerText = snap.val()||0);
+
+  const histRef = db.ref("accounts/"+key+"/history");
+  histRef.on("value", snap=>{
+    const val = snap.val()||{};
+    historyDiv.innerHTML="";
+    const entries = Object.values(val).sort((a,b)=>b.timestamp - a.timestamp);
+    for(let item of entries){
+      const div = document.createElement("div");
+      div.className = "history-item "+(item.type==="add"?"add":"remove");
+      const date = new Date(item.timestamp).toLocaleString();
+      div.textContent = `${item.type==="add"?"+":"-"}${item.amount} UGX — ${item.comment||""} — ${date}`;
+      historyDiv.appendChild(div);
+    }
+  });
+  if(!isAdmin && currentUser){
+    userFullName.innerText = "Name: " + val.fullName;
+  }
+}
+
+// ------------------ Add/Remove Money ------------------
+async function addTransaction(amount,type,comment){
+  if(!currentAccount) return;
+  const totalRef = db.ref("accounts/"+currentAccount+"/total");
+  const totalSnap = await totalRef.get();
+  let total = totalSnap.val()||0;
+  total += type==="add"?amount:-amount;
+  await totalRef.set(total);
+
+  const histRef = db.ref("accounts/"+currentAccount+"/history");
+  await histRef.push({amount,type,comment,timestamp:Date.now()});
+}
+
+addBtn.onclick=()=>{
+  const val=Number(amountInput.value);
+  const comment=reasonInput.value.trim();
+  if(!val) return;
+  addTransaction(val,"add",comment);
+  amountInput.value="";
+  reasonInput.value="";
+}
+removeBtn.onclick=()=>{
+  const val=Number(amountInput.value);
+  const comment=reasonInput.value.trim();
+  if(!val) return;
+  addTransaction(val,"remove",comment);
+  amountInput.value="";
+  reasonInput.value="";
+}
+</script>
 </body>
 </html>
