@@ -1,90 +1,149 @@
+<!-- Full integrated HTML+JS for Cash App with admin/user system, account creation, PIN/password reset, multi-segment UI -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Cash App!</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cash App</title>
 <style>
-  body {font-family: Arial, sans-serif; margin:0; padding:0; background: linear-gradient(to right, #ff4d4d, #ffe066, #5cd65c, #66ccff); color:#fff;}
-  h1, h2 {text-align:center; margin:0; text-shadow:2px 2px 4px #000;}
-  #container{display:flex; height:calc(100vh - 60px);}
-  .segment{flex:1; padding:15px; overflow-y:auto; background: rgba(0,0,0,0.2); margin:5px; border-radius:12px; box-shadow:2px 2px 12px rgba(0,0,0,0.3);}
-  .account-item{background: rgba(255,255,255,0.3); padding:8px; margin-bottom:5px; border-radius:6px; cursor:pointer;}
-  .account-item.selected{background: rgba(255,255,255,0.6); color:#000; font-weight:bold;}
-  .account-details input, .account-details textarea{width:100%; padding:10px; margin-top:10px; border-radius:8px; border:none; font-size:16px;}
-  .account-details button{width:48%; padding:12px; margin-top:10px; font-size:18px; border:none; border-radius:8px; cursor:pointer;}
-  #addMoneyBtn{background:#2ecc71; color:#fff;}
-  #removeMoneyBtn{background:#e74c3c; color:#fff;}
-  .history{max-height:100%; overflow-y:auto; background: rgba(255,255,255,0.3); padding:10px; border-radius:8px;}
-  .history-item{border-bottom:1px solid rgba(255,255,255,0.5); padding:5px 0;}
-  .history-item.add{color:#006600; font-weight:bold;} /* darker green for readability */
-  .history-item.remove{color:#e74c3c; font-weight:bold;}
-  #extra{background: rgba(255,255,255,0.3); display:flex; justify-content:center; align-items:center; font-size:1.5em; font-weight:bold;}
-  button:hover{opacity:0.9;}
-  #welcome{display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh;}
-  #welcome button{margin:10px; padding:15px 25px; font-size:20px; border:none; border-radius:10px; cursor:pointer;}
-  #loginSection{display:none; flex-direction:column; justify-content:center; align-items:center; height:100vh;}
+/* Basic reset */
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+body {
+  background: linear-gradient(135deg, #ff0000, #008000);
+  min-height:100vh;
+  padding:20px;
+  color:#fff;
+}
+#titleBar {
+  text-align:center;
+  font-size:32px;
+  font-weight:bold;
+  margin-bottom:20px;
+  text-shadow:2px 2px #000;
+}
+#mainContainer {
+  display:flex;
+  gap:15px;
+  width:100%;
+  min-height:80vh;
+}
+.segment {
+  flex:1;
+  background:rgba(255,255,255,0.1);
+  border-radius:12px;
+  padding:15px;
+  backdrop-filter: blur(4px);
+  overflow-y:auto;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+button {
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  margin-top:10px;
+  font-weight:bold;
+}
+.inputBox {
+  width:100%;
+  padding:8px;
+  margin-top:8px;
+  border-radius:6px;
+  border:none;
+}
+.accountItem {
+  background:rgba(0,0,0,0.2);
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+  cursor:pointer;
+}
+.transaction {
+  margin-top:8px;
+  padding:8px;
+  border-radius:6px;
+  background:rgba(0,0,0,0.3);
+}
 </style>
 </head>
 <body>
+<div id="titleBar">Cash App</div>
 
-<div id="welcome">
-  <h1>Welcome to Cash App!</h1>
-  <button id="adminBtn">Admin</button>
-  <button id="userBtn">User</button>
+<div id="welcomeScreen">
+  <h2>Welcome</h2>
+  <button id="adminBtn" style="background:#3498db; color:#fff;">Admin</button>
+  <button id="userBtn" style="background:#2ecc71; color:#fff;">User</button>
 </div>
 
-<div id="loginSection">
-  <h2 id="loginTitle"></h2>
-  <input type="password" id="loginPassword" placeholder="Enter password/PIN">
-  <button id="loginSubmit">Login</button>
+<div id="adminLogin" style="display:none;">
+  <h3>Admin Login</h3>
+  <input id="adminPassInput" type="password" class="inputBox" placeholder="Enter admin password" />
+  <button id="adminLoginBtn" style="background:#3498db; color:#fff;">Login</button>
 </div>
 
-<div id="container" style="display:none;">
-  <!-- Segment 1: Accounts -->
-  <div class="segment" id="segment1">
-    <h2>Accounts</h2>
-    <div id="adminControls" style="display:none;">
-      <input id="newAccountFullName" placeholder="Full Name">
-      <input id="newAccountAlias" placeholder="Alias (shown to users)">
-      <input id="newAccountAge" placeholder="Age">
-      <input id="newAccountGender" placeholder="Gender">
-      <input id="newAccountPin" placeholder="4-digit PIN">
-      <button id="newAcct">Create Account</button>
-      <button id="deleteAcct" style="background:#ff4d4d; color:#fff;">Delete Account</button>
+<div id="userSelect" style="display:none;">
+  <h3>Select your account</h3>
+  <div id="userAccountList"></div>
+</div>
+
+<div id="userPinScreen" style="display:none;">
+  <h3>Enter your PIN</h3>
+  <input id="userPinInput" type="password" maxlength="4" class="inputBox" />
+  <button id="userPinBtn" style="background:#2ecc71; color:#fff;">Login</button>
+</div>
+
+<div id="appScreen" style="display:none;">
+  <div id="mainContainer">
+
+    <!-- Segment 1: Accounts list + admin functions -->
+    <div class="segment" id="segment1">
+      <h3>Accounts</h3>
+      <div id="accountList"></div>
+
+      <div id="adminControls" style="display:none; margin-top:20px;">
+        <h3>Admin Controls</h3>
+        <input id="accFullName" class="inputBox" placeholder="Full name" />
+        <input id="accAlias" class="inputBox" placeholder="Alias" />
+        <input id="accAge" class="inputBox" placeholder="Age" />
+        <input id="accGender" class="inputBox" placeholder="Gender" />
+        <input id="accPin" class="inputBox" placeholder="4-digit PIN" maxlength="4" />
+        <button id="createAccBtn" style="background:#2980b9; color:#fff;">Create Account</button>
+
+        <button id="deleteAccBtn" style="background:#e74c3c; color:#fff;">Delete Selected Account</button>
+        <button id="resetUserPinBtn" style="background:#f1c40f; color:#000;">Reset User PIN</button>
+        <button id="resetAdminPassBtn" style="background:#9b59b6; color:#fff;">Reset Admin Password</button>
+      </div>
     </div>
-    <div id="accountsList"></div>
-  </div>
 
-  <!-- Segment 2: Account Details -->
-  <div class="segment account-details" id="segment2">
-    <h2>Account Details</h2>
-    <p id="userFullName"></p>
-    <p>Total: <span id="total">0</span> UGX</p>
-    <input id="amount" type="number" placeholder="Enter amount">
-    <textarea id="reason" placeholder="Reason / Comment"></textarea>
-    <div style="display:flex; justify-content:space-between;">
-      <button id="addMoneyBtn">Add Money</button>
-      <button id="removeMoneyBtn">Remove Money</button>
+    <!-- Segment 2: Account details -->
+    <div class="segment" id="segment2">
+      <h3>Account Details</h3>
+      <div id="userRealName" style="font-size:18px; margin-bottom:10px;"></div>
+      <div>Total Money: <span id="totalMoney">0</span></div>
+      <input id="amountInput" class="inputBox" placeholder="Amount" type="number" />
+      <input id="reasonInput" class="inputBox" placeholder="Reason/Comment" />
+      <button id="addMoneyBtn" style="background:#2ecc71; color:#fff;">Add Money</button>
+      <button id="removeMoneyBtn" style="background:#e74c3c; color:#fff;">Remove Money</button>
     </div>
-  </div>
 
-  <!-- Segment 3: Transaction History -->
-  <div class="segment" id="segment3">
-    <h2>Transaction History</h2>
-    <div class="history" id="history"></div>
-  </div>
+    <!-- Segment 3: Transaction history -->
+    <div class="segment" id="segment3">
+      <h3>Transaction History</h3>
+      <div id="historyList"></div>
+    </div>
 
-  <!-- Segment 4: Extra Space -->
-  <div class="segment" id="extra">
-    Extra Space
+    <!-- Segment 4 -->
+    <div class="segment" style="background:rgba(255,255,255,0.2);">
+      <h3>More</h3>
+      <p>Extra space for future features</p>
+    </div>
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+// ---------------- Firebase ----------------
 const firebaseConfig = {
   apiKey: "AIzaSyDbW2RuOnSr4H7Cl0_CLu99ckPbrh2y4Gw",
   authDomain: "business-app-data.firebaseapp.com",
@@ -98,202 +157,188 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let isAdmin=false;
-let currentAccount=null;
-let currentUser=null;
+// App state
+let currentMode = ""; // admin or user
+let currentAccount = "";
+let cachedAccounts = {};
 
-const welcomeDiv = document.getElementById("welcome");
-const loginSection = document.getElementById("loginSection");
-const loginTitle = document.getElementById("loginTitle");
-const loginPassword = document.getElementById("loginPassword");
-const loginSubmit = document.getElementById("loginSubmit");
-
-const totalSpan = document.getElementById("total");
-const historyDiv = document.getElementById("history");
-const accountsList = document.getElementById("accountsList");
-const userFullName = document.getElementById("userFullName");
-
+// Elements
+const welcomeScreen = document.getElementById("welcomeScreen");
+const adminLogin = document.getElementById("adminLogin");
+const userSelect = document.getElementById("userSelect");
+const userPinScreen = document.getElementById("userPinScreen");
+const appScreen = document.getElementById("appScreen");
 const adminControls = document.getElementById("adminControls");
-const amountInput = document.getElementById("amount");
-const reasonInput = document.getElementById("reason");
-const addBtn = document.getElementById("addMoneyBtn");
-const removeBtn = document.getElementById("removeMoneyBtn");
 
+// ---------------- Welcome Buttons ----------------
 document.getElementById("adminBtn").onclick = ()=>{
-  isAdmin=true;
-  welcomeDiv.style.display="none";
-  loginSection.style.display="flex";
-  loginTitle.innerText="Admin Login";
-}
+  currentMode="admin";
+  welcomeScreen.style.display="none";
+  adminLogin.style.display="block";
+};
 
 document.getElementById("userBtn").onclick = ()=>{
-  isAdmin=false;
-  welcomeDiv.style.display="none";
-  loginSection.style.display="flex";
-  loginTitle.innerText="User Login";
-}
+  currentMode="user";
+  welcomeScreen.style.display="none";
+  userSelect.style.display="block";
+  loadUserAccountList();
+};
 
-// ------------------ Login Handling ------------------
-loginSubmit.onclick = async ()=>{
-  const pass = loginPassword.value.trim();
-  loginPassword.value="";
-  if(isAdmin){
-    const snap = await db.ref("admin/password").get();
-    if(!snap.exists()){
-      // First time setup
-      await db.ref("admin/password").set(pass);
-      alert("Admin password set!");
-      showApp();
-    } else if(snap.val()===pass){
-      showApp();
-    } else {
-      alert("Incorrect password!");
-    }
-  } else {
-    // User login selects account
-    currentUser=null;
-    const aliasSnap = await db.ref("accounts").get();
-    const accounts = aliasSnap.val()||{};
-    let found=false;
-    for(let key in accounts){
-      if(accounts[key].alias && accounts[key].alias===pass){ // here 'pass' is alias for demo
-        currentAccount=key;
-        found=true;
-        // now ask for PIN
-        const pin = prompt("Enter 4-digit PIN for this account:");
-        if(pin===accounts[key].pin){
-          currentUser = key;
-          showApp();
-          userFullName.innerText = "Name: " + accounts[key].fullName;
-        } else {
-          alert("Incorrect PIN");
-        }
-      }
-    }
-    if(!found) alert("Alias not found");
+// ---------------- Admin Login ----------------
+document.getElementById("adminLoginBtn").onclick = async ()=>{
+  const pass = document.getElementById("adminPassInput").value;
+  const snap = await db.ref("admin/password").once("value");
+  if(!snap.exists()){
+    await db.ref("admin/password").set(pass);
+    alert("Admin password created!");
   }
-}
+  const real = snap.val();
+  if(pass===real){
+    adminLogin.style.display="none";
+    appScreen.style.display="block";
+    adminControls.style.display="block";
+    loadAccountList();
+  } else alert("Wrong password");
+};
 
-// ------------------ Show App ------------------
-function showApp(){
-  loginSection.style.display="none";
-  document.getElementById("container").style.display="flex";
-  adminControls.style.display = isAdmin ? "block" : "none";
-  addBtn.style.display = isAdmin ? "inline-block" : "none";
-  removeBtn.style.display = isAdmin ? "inline-block" : "none";
-  loadAccounts();
-}
-
-// ------------------ Load Accounts ------------------
-async function loadAccounts(){
-  const snap = await db.ref("accounts").get();
-  const accounts = snap.val()||{};
-  accountsList.innerHTML="";
-  for(let key in accounts){
+// ---------------- User Select ----------------
+async function loadUserAccountList(){
+  const snap = await db.ref("accounts").once("value");
+  document.getElementById("userAccountList").innerHTML="";
+  snap.forEach(acc=>{
+    const a = acc.val();
     const div = document.createElement("div");
-    div.className="account-item";
-    div.textContent = accounts[key].alias;
-    div.dataset.key=key;
-    div.onclick= async ()=>{
-      if(isAdmin){
-        currentAccount=key;
-        loadAccountData(key);
-      } else {
-        if(key!==currentUser){
-          alert("You can only access your own account");
-          return;
-        }
-        currentAccount=key;
-        loadAccountData(key);
-      }
+    div.className="accountItem";
+    div.innerText = a.alias;
+    div.onclick = ()=>{
+      currentAccount = acc.key;
+      userSelect.style.display="none";
+      userPinScreen.style.display="block";
     };
-    accountsList.appendChild(div);
-  }
-  if(isAdmin && Object.keys(accounts).length>0){
-    currentAccount=Object.keys(accounts)[0];
-    loadAccountData(currentAccount);
-  }
-}
-
-// ------------------ Create/Delete Account ------------------
-document.getElementById("newAcct").onclick=async ()=>{
-  const fullName = document.getElementById("newAccountFullName").value.trim();
-  const alias = document.getElementById("newAccountAlias").value.trim();
-  const age = document.getElementById("newAccountAge").value.trim();
-  const gender = document.getElementById("newAccountGender").value.trim();
-  const pin = document.getElementById("newAccountPin").value.trim();
-  if(!fullName || !alias || !pin) return alert("Full Name, Alias and PIN required");
-  const newRef = db.ref("accounts").push();
-  await newRef.set({fullName, alias, age, gender, pin, total:0});
-  document.getElementById("newAccountFullName").value="";
-  document.getElementById("newAccountAlias").value="";
-  document.getElementById("newAccountAge").value="";
-  document.getElementById("newAccountGender").value="";
-  document.getElementById("newAccountPin").value="";
-  loadAccounts();
-};
-
-document.getElementById("deleteAcct").onclick=async ()=>{
-  if(!currentAccount) return alert("Select account");
-  if(confirm("Delete this account and all its data?")){
-    await db.ref("accounts/"+currentAccount).remove();
-    currentAccount=null;
-    loadAccounts();
-  }
-};
-
-// ------------------ Load Account Data ------------------
-function loadAccountData(key){
-  const totalRef = db.ref("accounts/"+key+"/total");
-  totalRef.on("value", snap=> totalSpan.innerText = snap.val()||0);
-
-  const histRef = db.ref("accounts/"+key+"/history");
-  histRef.on("value", snap=>{
-    const val = snap.val()||{};
-    historyDiv.innerHTML="";
-    const entries = Object.values(val).sort((a,b)=>b.timestamp - a.timestamp);
-    for(let item of entries){
-      const div = document.createElement("div");
-      div.className = "history-item "+(item.type==="add"?"add":"remove");
-      const date = new Date(item.timestamp).toLocaleString();
-      div.textContent = `${item.type==="add"?"+":"-"}${item.amount} UGX — ${item.comment||""} — ${date}`;
-      historyDiv.appendChild(div);
-    }
+    document.getElementById("userAccountList").appendChild(div);
   });
-  if(!isAdmin && currentUser){
-    userFullName.innerText = "Name: " + val.fullName;
+}
+
+// ---------------- User PIN Login ----------------
+document.getElementById("userPinBtn").onclick = async ()=>{
+  const pin = document.getElementById("userPinInput").value;
+  const snap = await db.ref("accounts/"+currentAccount+"/pin").once("value");
+  if(pin===snap.val()){
+    userPinScreen.style.display="none";
+    appScreen.style.display="block";
+    adminControls.style.display="none";
+    setupUserView();
+  } else alert("Wrong PIN");
+};
+
+function setupUserView(){
+  loadAccountList();
+  document.getElementById("addMoneyBtn").style.display="none";
+  document.getElementById("removeMoneyBtn").style.display="none";
+  loadAccountDetails();
+}
+
+// ---------------- Load Accounts for admin panels ----------------
+async function loadAccountList(){
+  const snap = await db.ref("accounts").once("value");
+  cachedAccounts = snap.val() || {};
+  const list = document.getElementById("accountList");
+  list.innerHTML="";
+  for(let id in cachedAccounts){
+    const a = cachedAccounts[id];
+    const div = document.createElement("div");
+    div.className="accountItem";
+    div.innerText = a.alias;
+    div.onclick = ()=>{
+      currentAccount = id;
+      loadAccountDetails();
+    }
+    list.appendChild(div);
   }
 }
 
-// ------------------ Add/Remove Money ------------------
-async function addTransaction(amount,type,comment){
-  if(!currentAccount) return;
-  const totalRef = db.ref("accounts/"+currentAccount+"/total");
-  const totalSnap = await totalRef.get();
-  let total = totalSnap.val()||0;
-  total += type==="add"?amount:-amount;
-  await totalRef.set(total);
-
-  const histRef = db.ref("accounts/"+currentAccount+"/history");
-  await histRef.push({amount,type,comment,timestamp:Date.now()});
+// ---------------- Load Account Details ----------------
+async function loadAccountDetails(){
+  const snap = await db.ref("accounts/"+currentAccount).once("value");
+  const a = snap.val();
+  document.getElementById("userRealName").innerText = a.fullname;
+  document.getElementById("totalMoney").innerText = a.balance || 0;
+  loadHistory();
 }
 
-addBtn.onclick=()=>{
-  const val=Number(amountInput.value);
-  const comment=reasonInput.value.trim();
-  if(!val) return;
-  addTransaction(val,"add",comment);
-  amountInput.value="";
-  reasonInput.value="";
+// ---------------- History ----------------
+async function loadHistory(){
+  const snap = await db.ref("accounts/"+currentAccount+"/history").once("value");
+  const list = document.getElementById("historyList");
+  list.innerHTML="";
+  snap.forEach(h=>{
+    const t = h.val();
+    const div = document.createElement("div");
+    div.className="transaction";
+    div.style.color = t.type === "add" ? "#0f0" : "#ff4444";
+    div.innerText = `${t.type.toUpperCase()}: ${t.amount} - ${t.reason}`;
+    list.appendChild(div);
+  });
 }
-removeBtn.onclick=()=>{
-  const val=Number(amountInput.value);
-  const comment=reasonInput.value.trim();
-  if(!val) return;
-  addTransaction(val,"remove",comment);
-  amountInput.value="";
-  reasonInput.value="";
+
+// ---------------- Add / Remove Money ----------------
+document.getElementById("addMoneyBtn").onclick = ()=> changeMoney("add");
+document.getElementById("removeMoneyBtn").onclick = ()=> changeMoney("remove");
+
+async function changeMoney(type){
+  const amt = parseInt(document.getElementById("amountInput").value);
+  const rsn = document.getElementById("reasonInput").value;
+  if(!amt || !rsn) return alert("Enter amount + reason");
+  const snap = await db.ref("accounts/"+currentAccount+"/balance").once("value");
+  let bal = snap.val() || 0;
+  bal = type==="add" ? bal+amt : bal-amt;
+  await db.ref("accounts/"+currentAccount+"/balance").set(bal);
+  const newHist = db.ref("accounts/"+currentAccount+"/history").push();
+  await newHist.set({type, amount:amt, reason:rsn});
+  loadAccountDetails();
+}
+
+// ---------------- Create Account ----------------
+document.getElementById("createAccBtn").onclick = async ()=>{
+  const fn = document.getElementById("accFullName").value;
+  const al = document.getElementById("accAlias").value;
+  const ag = document.getElementById("accAge").value;
+  const gd = document.getElementById("accGender").value;
+  const pn = document.getElementById("accPin").value;
+  if(!fn || !al || !pn) return alert("Fill full name, alias, PIN");
+  const id = db.ref("accounts").push();
+  await id.set({fullname:fn, alias:al, age:ag, gender:gd, pin:pn, balance:0});
+  loadAccountList();
+}
+
+// ---------------- Delete Account ----------------
+document.getElementById("deleteAccBtn").onclick = async ()=>{
+  if(!currentAccount) return alert("Select an account");
+  await db.ref("accounts/"+currentAccount).remove();
+  currentAccount="";
+  loadAccountList();
+}
+
+// ---------------- Reset User PIN ----------------
+document.getElementById("resetUserPinBtn").onclick = async ()=>{
+  if(!currentAccount) return alert("Select an account first");
+  const newPin = prompt("Enter new 4-digit PIN:");
+  if(!newPin || newPin.length!==4) return alert("PIN must be 4 digits");
+  await db.ref("accounts/"+currentAccount+"/pin").set(newPin);
+  alert("PIN reset successfully!");
+}
+
+// ---------------- Reset Admin Password ----------------
+document.getElementById("resetAdminPassBtn").onclick = async ()=>{
+  const newPass = prompt("Enter new admin password:");
+  if(!newPass) return;
+  await db.ref("admin/password").set(newPass);
+  alert("Admin password updated!");
 }
 </script>
+
+<!-- BEGIN: Admin + User Account System Enhancements Will Be Inserted Here -->
+<!-- (Working… full upgraded code will be progressively inserted and expanded here by Nora.) -->
+<!-- END -->
 </body>
 </html>
