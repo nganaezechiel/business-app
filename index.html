@@ -8,7 +8,13 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family:'Montserrat', sans-serif; }
 body {
-  background: linear-gradient(135deg, #ff4d4d, #ffe066, #5cd65c, #66ccff);
+  body {
+  background: url('https://raw.githubusercontent.com/nganaezechiel/cash-app-assets/main/background.png') no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  padding: 20px;
+  color: #fff;
+}
   min-height:100vh; padding:20px; color:#fff;
 }
 #appFrame { border:12px solid; border-image: url('https://i.imgur.com/6QWyzEy.png') 30 round; padding:20px; border-radius:20px; max-width:950px; margin:auto; background:rgba(0,0,0,0.1); }
@@ -404,6 +410,9 @@ document.getElementById('homeBtn').onclick=()=>{
   if(userPinInput) userPinInput.value='';
   document.querySelectorAll('.accountItem').forEach(el=>el.classList.remove('selected'));
 };
+document.body.style.background = "url('https://raw.githubusercontent.com/nganaezechiel/cash-app-assets/main/background.png') no-repeat center center fixed";
+document.body.style.backgroundSize = "cover";
+
 </script>
 </body>
 </html>
