@@ -1,3 +1,4 @@
+<!-- Full integrated HTML+JS for Cash App with admin/user system, account creation, PIN/password reset, multi-segment UI, migration and edit tools -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +28,7 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
 .history-item.remove { background:#b33a3a; }
 #extraVerse { font-size:16px; line-height:1.4; text-align:center; }
 .small { font-size:12px; opacity:0.9; }
+#readonlyNotice { text-align:center; margin-top:6px; color:#f0f0f0; font-style:italic; }
 @media(max-width:900px){ #mainContainer{flex-direction:column;} }
 </style>
 </head>
@@ -72,13 +74,28 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
     <div class="segment" id="segment1">
       <h3>Accounts</h3>
       <div id="accountList"></div>
+      <div id="adminControls" style="display:none; margin-top:14px;">
+        <h4>Admin Controls</h4>
+        <input id="accFullName" class="inputBox" placeholder="Full name (required)" />
+        <input id="accAlias" class="inputBox" placeholder="Alias (shown to users)" />
+        <input id="accAge" class="inputBox" placeholder="Age" />
+        <input id="accGender" class="inputBox" placeholder="Gender" />
+        <input id="accPin" class="inputBox" placeholder="4-digit PIN (required)" maxlength="4" />
+        <div style="display:flex; gap:8px;">
+          <button id="createAccBtn" style="background:#2980b9; color:#fff; flex:1;">Create Account</button>
+          <button id="editAccBtn" style="background:#f39c12; color:#fff; flex:1;">Edit Selected</button>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="deleteAccBtn" style="background:#e74c3c; color:#fff; flex:1;">Delete Selected</button>
+          <button id="resetUserPinBtn" style="background:#27ae60; color:#fff; flex:1;">Reset User PIN</button>
+        </div>
+      </div>
     </div>
 
     <!-- Segment 2: Account Details (center-left) -->
     <div class="segment" id="segment2">
       <h3>Account Details</h3>
       <div id="userRealName" style="font-size:18px; margin-bottom:8px; color:#fff;"></div>
-      <div id="userAgeGender"></div>
       <div>Total: <strong><span id="totalMoney">0</span></strong> UGX</div>
       <input id="amountInput" class="inputBox" placeholder="Amount" type="number" />
       <input id="reasonInput" class="inputBox" placeholder="Reason / Comment" />
@@ -86,7 +103,7 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
         <button id="addMoneyBtn" style="background:#27ae60; color:#fff; flex:1;">Add Money</button>
         <button id="removeMoneyBtn" style="background:#c0392b; color:#fff; flex:1;">Remove Money</button>
       </div>
-      <p class="small">(Users see this page read-only after PIN login.)</p>
+      <p class="small" id="readonlyNotice">This account is read-only for users.</p>
     </div>
 
     <!-- Segment 3: Transaction History (center-right) -->
@@ -95,10 +112,10 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
       <div class="history" id="historyList"></div>
     </div>
 
-    <!-- Segment 4: Extra space with static verse -->
+    <!-- Segment 4: Extra space with static verse for users -->
     <div class="segment" id="segment4">
       <h3>Verse (Seasonal)</h3>
-      <div id="extraVerse"><em>"But the angel said to them, 'Do not be afraid. I bring you good news that will cause great joy for all the people.'"</em><div class='small' style='margin-top:8px;'>Luke 2:10-11</div></div>
+      <div id="extraVerse"><em>"But the angel said to them, 'Do not be afraid. I bring you good news of great joy for all people. Today in the town of David a Savior has been born to you; he is the Messiah, the Lord.'" </em><div class="small" style="margin-top:8px;">Luke 2:10-11</div></div>
       <p class="small">Static verse for users.</p>
     </div>
 
@@ -124,8 +141,8 @@ const db = firebase.database();
 
 // App state
 let mode = null; 
-let currentAccountKey = null;
-let currentUserKey = null;
+let currentAccountKey = null; 
+let currentUserKey = null; 
 let accountsCache = {};
 
 // Elements
@@ -143,21 +160,17 @@ const accountListEl = document.getElementById('accountList');
 const historyListEl = document.getElementById('historyList');
 const totalMoneyEl = document.getElementById('totalMoney');
 const userRealNameEl = document.getElementById('userRealName');
-const userAgeGenderEl = document.getElementById('userAgeGender');
 
-// buttons & inputs
 const accFullName = document.getElementById('accFullName');
 const accAlias = document.getElementById('accAlias');
 const accAge = document.getElementById('accAge');
 const accGender = document.getElementById('accGender');
 const accPin = document.getElementById('accPin');
 
-// admin control buttons
 const createAccBtn = document.getElementById('createAccBtn');
 const editAccBtn = document.getElementById('editAccBtn');
 const deleteAccBtn = document.getElementById('deleteAccBtn');
 const resetUserPinBtn = document.getElementById('resetUserPinBtn');
-const resetAdminPassBtn = document.getElementById('resetAdminPassBtn');
 
 const addMoneyBtn = document.getElementById('addMoneyBtn');
 const removeMoneyBtn = document.getElementById('removeMoneyBtn');
@@ -168,6 +181,7 @@ const userAccountList = document.getElementById('userAccountList');
 const userPinInput = document.getElementById('userPinInput');
 const userPinBtn = document.getElementById('userPinBtn');
 const userBackBtn = document.getElementById('userBackBtn');
+const readonlyNotice = document.getElementById('readonlyNotice');
 
 // welcome buttons
 document.getElementById('adminBtn').onclick = ()=>{ mode='admin'; welcome.style.display='none'; adminLogin.style.display='block'; };
@@ -198,9 +212,19 @@ adminResetButton.onclick = async ()=>{
   alert('Admin password updated');
 };
 
-function enterAdmin(){ adminLogin.style.display='none'; appScreen.style.display='block'; document.getElementById('adminControls').style.display='block'; loadAccountList(); }
+function enterAdmin(){
+  adminLogin.style.display='none';
+  appScreen.style.display='block';
+  document.getElementById('adminControls').style.display='block';
+  amountInput.style.display='block';
+  reasonInput.style.display='block';
+  addMoneyBtn.style.display='inline-block';
+  removeMoneyBtn.style.display='inline-block';
+  readonlyNotice.style.display='none';
+  loadAccountList();
+}
 
-// ---------------- Load user account list (for user to pick alias) ----------------
+// ---------------- Load user account list ----------------
 async function loadUserAccountList(){
   const snap = await db.ref('accounts').get();
   userAccountList.innerHTML='';
@@ -226,68 +250,164 @@ userPinBtn.onclick = async ()=>{
 };
 
 function enterUserView(){
-  userPinScreen.style.display='none';
+  userPinScreen.style.display='none'; 
   appScreen.style.display='block';
   document.getElementById('adminControls').style.display='none';
-  // hide add/remove buttons for users
-  addMoneyBtn.style.display='none'; removeMoneyBtn.style.display='none';
-  amountInput.style.display='none'; reasonInput.style.display='none';
-  loadAccountListForUser();
+  amountInput.style.display='none';
+  reasonInput.style.display='none';
+  addMoneyBtn.style.display='none';
+  removeMoneyBtn.style.display='none';
+  readonlyNotice.style.display='block';
+  loadAccountList();
   loadAccountDetails(currentUserKey);
 }
 
-// ---------------- Normalize / migrate account structure ----------------
+// ---------------- Normalize / migrate accounts ----------------
 function normalizeAccount(key, raw){
   const a = raw || {};
-  const normalized = {
+  return {
     fullName: a.fullName || a.fullname || a.name || a.full_name || 'Unknown',
     alias: a.alias || a.aliasName || a.nickname || ('acct-'+key.slice(-4)),
     age: a.age || a.Age || '',
     gender: a.gender || a.sex || '',
     pin: a.pin || a.PIN || '',
-    balance: (typeof a.balance!=='undefined')?a.balance:((typeof a.total!=='undefined')?a.total:((typeof a.AccountBalance!=='undefined')?a.AccountBalance:0))
+    balance: (typeof a.balance!=='undefined')?a.balance:0
   };
-  return normalized;
 }
 
-// Load account list for **user view** (show only their alias)
-async function loadAccountListForUser(){
-  if(!currentUserKey) return;
-  const snap = await db.ref('accounts/'+currentUserKey).get();
-  accountListEl.innerHTML='';
-  const a = normalizeAccount(currentUserKey, snap.val());
-  const div = document.createElement('div');
-  div.className='accountItem selected';
-  div.innerText = a.alias;
-  accountListEl.appendChild(div);
+// Write migration back for missing fields
+async function migrateAccountIfNeeded(key, raw){
+  const a = normalizeAccount(key, raw);
+  const updates = {};
+  if(!raw) raw = {};
+  if(!raw.fullName && a.fullName!=='Unknown') updates.fullName = a.fullName;
+  if(!raw.alias && a.alias) updates.alias = a.alias;
+  if(typeof raw.balance==='undefined') updates.balance = a.balance;
+  if(!raw.pin && a.pin) updates.pin = a.pin;
+  if(Object.keys(updates).length>0){
+    await db.ref('accounts/'+key).update(updates);
+  }
 }
 
-// ---------------- Load account details ----------------
-async function loadAccountDetails(key){
-  if(!key) return;
-  const snap = await db.ref('accounts/'+key).get();
-  const a = normalizeAccount(key, snap.val());
-  userRealNameEl.innerText = 'Name: ' + (a.fullName || '');
-  userAgeGenderEl.innerText = 'Age: ' + (a.age||'N/A') + ' | Gender: ' + (a.gender||'N/A');
-  totalMoneyEl.innerText = a.balance || 0;
-
-  // load history
-  const histSnap = await db.ref('accounts/'+key+'/history').get();
-  const hist = histSnap.val() || {};
-  historyListEl.innerHTML='';
-  const entries = Object.values(hist).sort((x,y)=> (y.timestamp||0)-(x.timestamp||0));
-  entries.forEach(it=>{
+// ---------------- Load account list for admin ----------------
+async function loadAccountList(){
+  const snap = await db.ref('accounts').get();
+  accountsCache = {};
+  accountListEl.innerHTML = '';
+  snap.forEach(async child=>{
+    const key = child.key; const raw = child.val();
+    await migrateAccountIfNeeded(key, raw);
+    const a = normalizeAccount(key, raw);
+    accountsCache[key]=a;
     const div = document.createElement('div');
-    div.className = 'history-item ' + (it.type==='add'?'add':'remove');
-    const comment = it.comment || it.reason || '';
-    const ts = it.timestamp ? new Date(it.timestamp).toLocaleString() : '';
-    div.innerHTML = `<strong>${it.type==='add'?'+':'-'} ${it.amount} UGX</strong><div class='small'>${comment}</div><div class='small'>${ts}</div>`;
-    historyListEl.appendChild(div);
+    div.className='accountItem';
+    div.innerText = a.alias + (a.fullName?(' - '+a.fullName):'');
+    div.onclick = ()=>{ 
+      currentAccountKey = key;
+      document.querySelectorAll('#accountList .accountItem').forEach(el=>el.classList.remove('selected'));
+      div.classList.add('selected');
+      loadAccountDetails(key);
+    };
+    accountListEl.appendChild(div);
   });
 }
 
-// ---------------- Admin controls remain the same ----------------
-// ... You can keep the existing admin add/edit/delete functions here ...
+// ---------------- Load account details ----------------
+let listeners = [];
+function clearListeners(){ listeners.forEach(l=>l.off()); listeners = []; }
+async function loadAccountDetails(key){
+  if(!key) return;
+  clearListeners();
+  const acctRef = db.ref('accounts/'+key);
+  const balRef = acctRef.child('balance');
+  balRef.on('value', snap=>{ totalMoneyEl.innerText = snap.val() || 0; });
+  listeners.push(balRef);
+  const snap = await acctRef.get(); const raw = snap.val()||{};
+  const a = normalizeAccount(key, raw);
+  userRealNameEl.innerText = 'Name: ' + (a.fullName || '');
+  const histRef = acctRef.child('history');
+  histRef.on('value', s=>{
+    const val = s.val() || {};
+    historyListEl.innerHTML='';
+    const entries = Object.values(val).sort((x,y)=> (y.timestamp||0)-(x.timestamp||0));
+    entries.forEach(it=>{
+      const div = document.createElement('div');
+      div.className = 'history-item ' + (it.type==='add'?'add':'remove');
+      const comment = it.comment || it.reason || '';
+      const ts = it.timestamp ? new Date(it.timestamp).toLocaleString() : '';
+      div.innerHTML = `<strong>${it.type==='add'?'+':'-'} ${it.amount} UGX</strong><div class='small'>${comment}</div><div class='small'>${ts}</div>`;
+      historyListEl.appendChild(div);
+    });
+  });
+  listeners.push(histRef);
+}
+
+// ---------------- Admin actions ----------------
+createAccBtn.onclick = async ()=>{
+  const fullName = (accFullName.value||'').trim();
+  const alias = (accAlias.value||'').trim();
+  const age = (accAge.value||'').trim();
+  const gender = (accGender.value||'').trim();
+  const pin = (accPin.value||'').trim();
+  if(!fullName || !alias || !pin) return alert('Full name, alias, and PIN required');
+  const newRef = db.ref('accounts').push();
+  await newRef.set({fullName, alias, age, gender, pin, balance:0});
+  alert('Account created');
+  accFullName.value=''; accAlias.value=''; accAge.value=''; accGender.value=''; accPin.value='';
+  loadAccountList();
+};
+
+editAccBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select an account');
+  const updates = {};
+  if(accFullName.value) updates.fullName = accFullName.value;
+  if(accAlias.value) updates.alias = accAlias.value;
+  if(accAge.value) updates.age = accAge.value;
+  if(accGender.value) updates.gender = accGender.value;
+  if(accPin.value) updates.pin = accPin.value;
+  await db.ref('accounts/'+currentAccountKey).update(updates);
+  alert('Account updated'); 
+  accFullName.value=''; accAlias.value=''; accAge.value=''; accGender.value=''; accPin.value='';
+  loadAccountList();
+};
+
+deleteAccBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select an account');
+  const ok = confirm('Delete this account?');
+  if(!ok) return;
+  await db.ref('accounts/'+currentAccountKey).remove();
+  currentAccountKey=null;
+  loadAccountList();
+};
+
+resetUserPinBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select an account');
+  const newPin = prompt('Enter new 4-digit PIN:');
+  if(!newPin) return;
+  await db.ref('accounts/'+currentAccountKey+'/pin').set(newPin);
+  alert('PIN reset');
+};
+
+// ---------------- Admin money operations ----------------
+addMoneyBtn.onclick = async ()=>{
+  const amt = Number(amountInput.value); if(!amt) return alert('Enter valid amount'); const reason = reasonInput.value||'';
+  const acctRef = db.ref('accounts/'+currentAccountKey);
+  const snap = await acctRef.child('balance').get(); let bal = snap.val()||0; bal += amt;
+  await acctRef.update({balance:bal});
+  const histRef = acctRef.child('history').push();
+  await histRef.set({type:'add', amount:amt, reason, comment:reason, timestamp:Date.now()});
+  amountInput.value=''; reasonInput.value=''; loadAccountDetails(currentAccountKey);
+};
+removeMoneyBtn.onclick = async ()=>{
+  const amt = Number(amountInput.value); if(!amt) return alert('Enter valid amount'); const reason = reasonInput.value||'';
+  const acctRef = db.ref('accounts/'+currentAccountKey);
+  const snap = await acctRef.child('balance').get(); let bal = snap.val()||0; bal -= amt;
+  if(bal<0) return alert('Insufficient balance');
+  await acctRef.update({balance:bal});
+  const histRef = acctRef.child('history').push();
+  await histRef.set({type:'remove', amount:amt, reason, comment:reason, timestamp:Date.now()});
+  amountInput.value=''; reasonInput.value=''; loadAccountDetails(currentAccountKey);
+};
 
 </script>
 </body>
