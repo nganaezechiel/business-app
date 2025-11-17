@@ -2,21 +2,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Cash App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ca$h App</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-/* Basic reset */
-* { margin:0; padding:0; box-sizing:border-box; font-family:Arial, Helvetica, sans-serif; }
+/* Reset & Base */
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', Arial, Helvetica, sans-serif; }
 body {
-  background: linear-gradient(135deg, #ff4d4d, #ffe066, #5cd65c, #66ccff);
   min-height:100vh;
+  background: linear-gradient(135deg, #ff4d4d, #ffe066, #5cd65c, #66ccff);
   padding:20px;
   color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
-#titleBar { text-align:center; font-size:32px; font-weight:bold; margin-bottom:12px; text-shadow:2px 2px #000; }
-#welcomeScreen, #adminLogin, #userSelect, #userPinScreen { max-width:420px; margin:20px auto; text-align:center; }
-#mainContainer { display:flex; gap:15px; width:100%; min-height:75vh; }
+
+/* Decorative frame */
+#appWrapper {
+  border: 12px solid #fff;
+  border-image: url('https://i.imgur.com/3bD5Vdp.png') 30 stretch; /* african pattern frame placeholder */
+  border-radius:20px;
+  padding:30px;
+  max-width:480px;
+  width:100%;
+  background: rgba(0,0,0,0.1);
+  backdrop-filter: blur(8px);
+  text-align:center;
+  box-shadow:0 12px 36px rgba(0,0,0,0.4);
+  animation: fadeIn 1s ease-out;
+}
+
+/* Keyframes */
+@keyframes floatText {
+  0%,100%{ transform: translateY(0px); }
+  50%{ transform: translateY(-6px); }
+}
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+/* App Logo / Name */
+#titleBar {
+  font-size:48px;
+  font-weight:700;
+  margin-bottom:20px;
+  color:#ffd700;
+  text-shadow:2px 2px #000;
+  animation: floatText 3s ease-in-out infinite;
+  letter-spacing:2px;
+}
+
+/* Welcome Message */
+#welcomeText {
+  font-size:18px;
+  line-height:1.6;
+  margin-bottom:25px;
+  text-shadow: 1px 1px #000;
+}
+
+/* Login Title */
+#loginTitle {
+  font-size:22px;
+  font-weight:600;
+  margin-bottom:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+/* Login Buttons */
+button.loginBtn {
+  padding:12px 25px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:16px;
+  margin:10px;
+  transition: all 0.3s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+button.loginBtn:hover { transform:scale(1.05); box-shadow:0 6px 14px rgba(0,0,0,0.35); }
+
+/* Admin & User colors */
+#adminBtn { background:#2c3e50; color:#fff; }
+#userBtn { background:#16a085; color:#fff; }
+
+/* Segments & App Screen */
+#mainContainer { display:flex; gap:15px; width:100%; min-height:70vh; }
 .segment { flex:1; background:rgba(255,255,255,0.08); border-radius:12px; padding:15px; backdrop-filter: blur(6px); overflow-y:auto; box-shadow:0 6px 18px rgba(0,0,0,0.35); }
 button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; font-weight:700; }
 .inputBox { width:100%; padding:10px; margin-top:10px; border-radius:8px; border:none; font-size:15px; }
@@ -28,102 +108,88 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
 .history-item.remove { background:#b33a3a; }
 #extraVerse { font-size:16px; line-height:1.4; text-align:center; }
 .small { font-size:12px; opacity:0.9; }
-#readonlyNotice { text-align:center; margin-top:6px; color:#f0f0f0; font-style:italic; }
 @media(max-width:900px){ #mainContainer{flex-direction:column;} }
 </style>
 </head>
+
 <body>
-<div id="titleBar">Cash App</div>
+<div id="appWrapper">
 
-<!-- Welcome / Login -->
-<div id="welcomeScreen">
-  <h2>Welcome</h2>
-  <button id="adminBtn" style="background:#2c3e50; color:#fff; width:180px;">Admin</button>
-  <button id="userBtn" style="background:#16a085; color:#fff; width:180px;">User</button>
-</div>
+  <!-- App Logo / Title -->
+  <div id="titleBar">Ca$h App</div>
 
-<div id="adminLogin" style="display:none;">
-  <h3>Admin Login</h3>
-  <input id="adminPassInput" type="password" class="inputBox" placeholder="Enter admin password" />
-  <div>
-    <button id="adminLoginBtn" style="background:#34495e; color:#fff;">Login</button>
-    <button id="adminResetButton" style="background:#9b59b6; color:#fff; margin-left:8px;">Reset Admin Password</button>
+  <!-- Welcome Text -->
+  <div id="welcomeText">
+    Welcome to your Ca$h App! Keep track of your savings, monitor your transactions, and manage your money with ease.
   </div>
-  <p class="small">If no admin password is set yet, entering one will create it.</p>
-</div>
 
-<div id="userSelect" style="display:none;">
-  <h3>Select your account (alias)</h3>
-  <div id="userAccountList"></div>
-</div>
-
-<div id="userPinScreen" style="display:none; text-align:center;">
-  <h3>Enter your 4-digit PIN</h3>
-  <input id="userPinInput" type="password" maxlength="4" class="inputBox" style="width:160px; text-align:center; font-size:18px;" />
-  <div>
-    <button id="userPinBtn" style="background:#16a085; color:#fff;">Login</button>
-    <button id="userBackBtn" style="background:#7f8c8d; color:#fff; margin-left:8px;">Back</button>
+  <!-- Login Section -->
+  <div id="loginSection">
+    <div id="loginTitle">
+      <img src="https://i.imgur.com/6wCqXwL.png" width="24" alt="key icon"> Login
+    </div>
+    <button class="loginBtn" id="adminBtn"><img src="https://i.imgur.com/6wCqXwL.png" width="20"> Admin</button>
+    <button class="loginBtn" id="userBtn"><img src="https://i.imgur.com/OVxKZfA.png" width="20"> User</button>
   </div>
-</div>
 
-<!-- Main app area -->
-<div id="appScreen" style="display:none;">
+  <!-- Welcome / Login Screens -->
+  <div id="welcomeScreen" style="display:none;"></div>
+  <div id="adminLogin" style="display:none;"></div>
+  <div id="userSelect" style="display:none;"></div>
+  <div id="userPinScreen" style="display:none;"></div>
 
-<div style="text-align:right; margin-bottom:10px;">
-  <button id="homeBtn" style="background:#34495e; color:#fff; padding:8px 12px; border-radius:6px; font-weight:700;">Home</button>
-</div>
+  <!-- Main app area -->
+  <div id="appScreen" style="display:none;">
+    <div id="mainContainer">
 
-  <div id="mainContainer">
+      <!-- Segment 1: Accounts -->
+      <div class="segment" id="segment1">
+        <h3>Accounts</h3>
+        <div id="accountList"></div>
+        <div id="adminControls" style="display:none; margin-top:14px;">
+          <h4>Admin Controls</h4>
+          <input id="accFullName" class="inputBox" placeholder="Full name (required)" />
+          <input id="accAlias" class="inputBox" placeholder="Alias (shown to users)" />
+          <input id="accAge" class="inputBox" placeholder="Age" />
+          <input id="accGender" class="inputBox" placeholder="Gender" />
+          <input id="accPin" class="inputBox" placeholder="4-digit PIN (required)" maxlength="4" />
+          <div style="display:flex; gap:8px;">
+            <button id="createAccBtn" style="background:#2980b9; color:#fff; flex:1;">Create Account</button>
+            <button id="editAccBtn" style="background:#f39c12; color:#fff; flex:1;">Edit Selected</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button id="deleteAccBtn" style="background:#e74c3c; color:#fff; flex:1;">Delete Selected</button>
+            <button id="resetUserPinBtn" style="background:#27ae60; color:#fff; flex:1;">Reset User PIN</button>
+          </div>
+        </div>
+      </div>
 
-    <!-- Segment 1: Accounts (left) -->
-    <div class="segment" id="segment1">
-      <h3>Accounts</h3>
-      <div id="accountList"></div>
-      <div id="adminControls" style="display:none; margin-top:14px;">
-        <h4>Admin Controls</h4>
-        <input id="accFullName" class="inputBox" placeholder="Full name (required)" />
-        <input id="accAlias" class="inputBox" placeholder="Alias (shown to users)" />
-        <input id="accAge" class="inputBox" placeholder="Age" />
-        <input id="accGender" class="inputBox" placeholder="Gender" />
-        <input id="accPin" class="inputBox" placeholder="4-digit PIN (required)" maxlength="4" />
+      <!-- Segment 2: Account Details -->
+      <div class="segment" id="segment2">
+        <h3>Account Details</h3>
+        <div id="userRealName" style="font-size:18px; margin-bottom:8px; color:#fff;"></div>
+        <div>Total: <strong><span id="totalMoney">0</span></strong> UGX</div>
+        <input id="amountInput" class="inputBox" placeholder="Amount" type="number" />
+        <input id="reasonInput" class="inputBox" placeholder="Reason / Comment" />
         <div style="display:flex; gap:8px;">
-          <button id="createAccBtn" style="background:#2980b9; color:#fff; flex:1;">Create Account</button>
-          <button id="editAccBtn" style="background:#f39c12; color:#fff; flex:1;">Edit Selected</button>
+          <button id="addMoneyBtn" style="background:#27ae60; color:#fff; flex:1;">Add Money</button>
+          <button id="removeMoneyBtn" style="background:#c0392b; color:#fff; flex:1;">Remove Money</button>
         </div>
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="deleteAccBtn" style="background:#e74c3c; color:#fff; flex:1;">Delete Selected</button>
-          <button id="resetUserPinBtn" style="background:#27ae60; color:#fff; flex:1;">Reset User PIN</button>
-        </div>
+        <p class="small">(Users see this page read-only after PIN login.)</p>
       </div>
-    </div>
 
-    <!-- Segment 2: Account Details (center-left) -->
-    <div class="segment" id="segment2">
-      <h3>Account Details</h3>
-      <div id="userRealName" style="font-size:18px; margin-bottom:8px; color:#fff;"></div>
-      <div>Total: <strong><span id="totalMoney">0</span></strong> UGX</div>
-      <input id="amountInput" class="inputBox" placeholder="Amount" type="number" />
-      <input id="reasonInput" class="inputBox" placeholder="Reason / Comment" />
-      <div style="display:flex; gap:8px;">
-        <button id="addMoneyBtn" style="background:#27ae60; color:#fff; flex:1;">Add Money</button>
-        <button id="removeMoneyBtn" style="background:#c0392b; color:#fff; flex:1;">Remove Money</button>
+      <!-- Segment 3: Transaction History -->
+      <div class="segment" id="segment3">
+        <h3>Transaction History</h3>
+        <div class="history" id="historyList"></div>
       </div>
-      <p class="small" id="readonlyNotice">This account is read-only for users.</p>
-    </div>
 
-    <!-- Segment 3: Transaction History (center-right) -->
-    <div class="segment" id="segment3">
-      <h3>Transaction History</h3>
-      <div class="history" id="historyList"></div>
-    </div>
-
-    <!-- Segment 4: Extra space with static verse for users -->
-    <div class="segment" id="segment4">
-      <h3>Verse (Seasonal)</h3>
-      <div id="extraVerse"><em>"But the angel said to them, 'Do not be afraid. I bring you good news of great joy for all people. Today in the town of David a Savior has been born to you; he is the Messiah, the Lord.'" </em><div class="small" style="margin-top:8px;">Luke 2:10-11</div></div>
-      <p class="small">Static verse for users.</p>
-    </div>
-
+      <!-- Segment 4: Extra Verse -->
+      <div class="segment" id="segment4">
+        <h3>Verse (Seasonal)</h3>
+        <div id="extraVerse">Loading verse...</div>
+        <p class="small">Verse rotates every 6 hours (local time).</p>
+      </div>
   </div>
 </div>
 
