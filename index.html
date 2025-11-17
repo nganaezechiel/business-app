@@ -3,61 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Business App</title>
+<title>Business App - Christmas Edition</title>
 <style>
-  /* ---------- General Theme ---------- */
+  /* ---------- Christmas Theme ---------- */
   body {
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(to bottom right, #f0f4f8, #d9e2ec);
+    background: linear-gradient(to bottom right, #ffefef, #e5f5e0);
     color: #333;
     margin: 0;
     padding: 0;
   }
-  h1, h2, h3 {
-    color: #0b3d91;
+  h1,h2,h3 {
+    color: #a10000; /* deep red */
   }
   .screen {
     display: none;
     padding: 20px;
   }
   button {
-    background-color: #0b3d91;
+    background-color: #007a00; /* dark green */
     color: white;
     border: none;
     padding: 10px 15px;
     margin: 5px;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: bold;
   }
-  button:hover {
-    background-color: #054a91;
-  }
+  button:hover { background-color: #005500; }
   input, select {
     padding: 8px;
     margin: 5px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    border-radius: 5px;
+    border: 1px solid #a10000;
   }
   .accountItem {
     padding: 8px;
     margin: 4px 0;
-    background-color: #e1ecf7;
-    border-radius: 5px;
+    background-color: #fff0f0;
+    border-left: 4px solid #a10000;
+    border-radius: 6px;
     cursor: pointer;
   }
-  .accountItem:hover {
-    background-color: #c9ddf2;
-  }
-  .selected {
-    background-color: #0b3d91;
-    color: white;
-  }
+  .accountItem:hover { background-color: #ffdada; }
+  .selected { background-color: #a10000; color: white; }
   .history-item {
     padding: 6px;
     margin: 3px 0;
-    border-left: 4px solid #0b3d91;
-    background-color: #f4f7fb;
-    border-radius: 3px;
+    border-left: 4px solid #007a00;
+    background-color: #f4fff4;
+    border-radius: 4px;
   }
   .history-item.add { border-color: green; }
   .history-item.remove { border-color: red; }
@@ -65,54 +60,52 @@
   #adminControls {
     margin-top: 15px;
     padding: 15px;
-    background-color: #e1f0ff;
+    background-color: #ffe6e6;
     border-radius: 8px;
+    border: 2px solid #a10000;
   }
   #extraVerse {
     margin-top: 15px;
     padding: 12px;
-    background-color: #fff8dc;
+    background-color: #fffbe6;
     border-left: 6px solid #f4c542;
-    border-radius: 5px;
+    border-radius: 6px;
     font-style: italic;
   }
+  .segment {
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 2px solid #a10000;
+    background-color: #fff0f0;
+  }
+  .segment h3 { margin-top:0; }
 </style>
 </head>
 <body>
 
-<!-- ---------- Welcome Screen ---------- -->
-<div id="welcomeScreen" class="screen" style="display:block;">
-  <h1>Welcome</h1>
+<!-- ---------- Segments 1-4 ---------- -->
+<div id="segment1" class="segment screen" style="display:block;">
+  <h3>Segment 1 - Welcome</h3>
   <button id="adminBtn">Admin</button>
   <button id="userBtn">User</button>
 </div>
 
-<!-- ---------- Admin Login ---------- -->
-<div id="adminLogin" class="screen">
-  <h2>Admin Login</h2>
+<div id="segment2" class="segment screen">
+  <h3>Segment 2 - Admin Login</h3>
   <input type="password" id="adminPassInput" placeholder="Password">
   <button id="adminLoginBtn">Login</button>
   <button id="adminResetButton">Reset Password</button>
 </div>
 
-<!-- ---------- User Select ---------- -->
-<div id="userSelect" class="screen">
-  <h2>Select Your Account</h2>
+<div id="segment3" class="segment screen">
+  <h3>Segment 3 - User Select Account</h3>
   <div id="userAccountList"></div>
   <button id="userBackBtn">Back</button>
 </div>
 
-<!-- ---------- User PIN ---------- -->
-<div id="userPinScreen" class="screen">
-  <h2>Enter Your PIN</h2>
-  <input type="password" id="userPinInput" placeholder="PIN">
-  <button id="userPinBtn">Enter</button>
-  <button id="userBackBtn">Back</button>
-</div>
-
-<!-- ---------- Main App Screen ---------- -->
-<div id="appScreen" class="screen">
-  <h2>Account Details</h2>
+<div id="segment4" class="segment screen">
+  <h3>Segment 4 - Main App</h3>
   <div><strong id="userRealName">Name:</strong></div>
   <div>Total Balance: <span id="totalMoney">0</span> UGX</div>
   
@@ -145,7 +138,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-// ---------------- Firebase config ----------------
 const firebaseConfig = {
   apiKey: "AIzaSyDbW2RuOnSr4H7Cl0_CLu99ckPbrh2y4Gw",
   authDomain: "business-app-data.firebaseapp.com",
@@ -159,82 +151,69 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// App state
+// ---------- State ----------
 let mode = null;
 let currentAccountKey = null;
 let currentUserKey = null;
 let accountsCache = {};
+let listeners = [];
 
-// Elements
-const welcome = document.getElementById('welcomeScreen');
-const adminLogin = document.getElementById('adminLogin');
-const userSelect = document.getElementById('userSelect');
-const userPinScreen = document.getElementById('userPinScreen');
-const appScreen = document.getElementById('appScreen');
-
+// ---------- Elements ----------
+const segments = [
+  document.getElementById('segment1'),
+  document.getElementById('segment2'),
+  document.getElementById('segment3'),
+  document.getElementById('segment4')
+];
 const adminPassInput = document.getElementById('adminPassInput');
 const adminLoginBtn = document.getElementById('adminLoginBtn');
 const adminResetButton = document.getElementById('adminResetButton');
-
+const userAccountList = document.getElementById('userAccountList');
+const userBackBtn = document.getElementById('userBackBtn');
 const accountListEl = document.getElementById('accountList');
 const historyListEl = document.getElementById('historyList');
 const totalMoneyEl = document.getElementById('totalMoney');
 const userRealNameEl = document.getElementById('userRealName');
-
 const accFullName = document.getElementById('accFullName');
 const accAlias = document.getElementById('accAlias');
 const accAge = document.getElementById('accAge');
 const accGender = document.getElementById('accGender');
 const accPin = document.getElementById('accPin');
-
 const createAccBtn = document.getElementById('createAccBtn');
 const editAccBtn = document.getElementById('editAccBtn');
 const deleteAccBtn = document.getElementById('deleteAccBtn');
 const resetUserPinBtn = document.getElementById('resetUserPinBtn');
 const resetAdminPassBtn = document.getElementById('resetAdminPassBtn');
-
 const addMoneyBtn = document.getElementById('addMoneyBtn');
 const removeMoneyBtn = document.getElementById('removeMoneyBtn');
 const amountInput = document.getElementById('amountInput');
 const reasonInput = document.getElementById('reasonInput');
+const extraVerseEl = document.getElementById('extraVerse');
 
-const userAccountList = document.getElementById('userAccountList');
-const userPinInput = document.getElementById('userPinInput');
-const userPinBtn = document.getElementById('userPinBtn');
-const userBackBtn = document.querySelectorAll('#userBackBtn');
+// ---------- Helper ----------
+function showSegment(index){ segments.forEach((s,i)=>s.style.display=(i===index?'block':'none')); }
 
-// ---------- Welcome Buttons ----------
-document.getElementById('adminBtn').onclick = ()=>{ mode='admin'; welcome.style.display='none'; adminLogin.style.display='block'; };
-document.getElementById('userBtn').onclick = ()=>{ mode='user'; welcome.style.display='none'; userSelect.style.display='block'; loadUserAccountList(); };
+// ---------- Welcome ----------
+document.getElementById('adminBtn').onclick = ()=>{ mode='admin'; showSegment(1); };
+document.getElementById('userBtn').onclick = ()=>{ mode='user'; showSegment(2); loadUserAccountList(); };
 
-// ---------- Admin login ----------
+// ---------- Admin Login ----------
 adminLoginBtn.onclick = async ()=>{
   const pass = (adminPassInput.value||'').trim();
   adminPassInput.value='';
   if(!pass) return alert('Enter a password');
   const snap = await db.ref('admin/password').get();
-  if(!snap.exists()){
-    await db.ref('admin/password').set(pass);
-    alert('Admin password created');
-    enterAdmin();
-    return;
-  }
-  if(snap.val()===pass){ enterAdmin(); }
-  else alert('Wrong admin password');
+  if(!snap.exists()){ await db.ref('admin/password').set(pass); alert('Admin password created'); enterAdmin(); return; }
+  if(snap.val()===pass){ enterAdmin(); } else alert('Wrong admin password');
 };
-
 adminResetButton.onclick = async ()=>{
-  const ok = confirm('Reset admin password? This will overwrite existing admin password.');
-  if(!ok) return;
-  const newPass = prompt('Enter new admin password:');
-  if(!newPass) return;
-  await db.ref('admin/password').set(newPass);
-  alert('Admin password updated');
+  const ok = confirm('Reset admin password?'); if(!ok) return;
+  const newPass = prompt('Enter new password'); if(!newPass) return;
+  await db.ref('admin/password').set(newPass); alert('Admin password updated');
 };
+function enterAdmin(){ showSegment(3); document.getElementById('adminControls').style.display='block'; loadAccountList(); }
 
-function enterAdmin(){ adminLogin.style.display='none'; appScreen.style.display='block'; document.getElementById('adminControls').style.display='block'; loadAccountList(); }
-
-// ---------- User Account Flow ----------
+// ---------- User Flow ----------
 async function loadUserAccountList(){
   const snap = await db.ref('accounts').get();
   userAccountList.innerHTML='';
@@ -243,188 +222,147 @@ async function loadUserAccountList(){
     const div = document.createElement('div');
     div.className='accountItem';
     div.innerText = a.alias || ('acct-'+child.key.slice(-4));
-    div.onclick = ()=>{ currentAccountKey = child.key; userSelect.style.display='none'; userPinScreen.style.display='block'; };
+    div.onclick = ()=>{ currentAccountKey = child.key; currentUserKey = currentAccountKey; enterUserView(); };
     userAccountList.appendChild(div);
   });
 }
+userBackBtn.onclick = ()=>{ showSegment(0); };
 
-userBackBtn.forEach(btn => btn.onclick = ()=>{ userPinScreen.style.display='none'; userSelect.style.display='block'; });
-
-userPinBtn.onclick = async ()=>{
-  const pin = (userPinInput.value||'').trim(); userPinInput.value='';
-  if(!pin) return alert('Enter PIN');
-  const snap = await db.ref('accounts/'+currentAccountKey+'/pin').get();
-  if(!snap.exists()) return alert('Account pin not set');
-  if(snap.val()===pin){ currentUserKey = currentAccountKey; enterUserView(); }
-  else alert('Incorrect PIN');
-};
-
-function enterUserView(){ 
-  userPinScreen.style.display='none'; 
-  appScreen.style.display='block'; 
-  document.getElementById('adminControls').style.display='none';
-  addMoneyBtn.style.display='none'; 
-  removeMoneyBtn.style.display='none'; 
-  loadAccountList(); 
-  loadAccountDetails(currentUserKey); 
-}
-
-// ---------- Normalize Account ----------
 function normalizeAccount(key, raw){
-  const a = raw || {};
+  const a = raw||{};
   return {
     fullName: a.fullName || a.fullname || a.name || a.full_name || 'Unknown',
     alias: a.alias || a.aliasName || a.nickname || ('acct-'+key.slice(-4)),
     age: a.age || a.Age || '',
     gender: a.gender || a.sex || '',
     pin: a.pin || a.PIN || '',
-    balance: (typeof a.balance!=='undefined')?a.balance:((typeof a.total!=='undefined')?a.total:((typeof a.AccountBalance!=='undefined')?a.AccountBalance:0))
+    balance: (typeof a.balance!=='undefined')?a.balance:0
   };
 }
 
-// ---------- Load Account List ----------
+// ---------- Bible Verse ----------
+const verses = [{ ref:'Luke 2:10-11', text:'But the angel said to them, "Do not be afraid. I bring you good news that will cause great joy for all the people. Today in the town of David a Savior has been born to you; he is the Messiah, the Lord."' }];
+function showVerse(){ const v=verses[0]; extraVerseEl.innerHTML=`<em>"${v.text}"</em><div class='small' style='margin-top:8px;'>${v.ref}</div>`; }
+showVerse(); setInterval(showVerse,21600000);
+
+// ---------- Load / Admin Functions ----------
+function clearListeners(){ listeners.forEach(l=>l.off()); listeners=[]; }
+
 async function loadAccountList(){
   const snap = await db.ref('accounts').get();
   accountsCache = {};
-  if(accountListEl) accountListEl.innerHTML='';
+  userAccountList.innerHTML='';
   snap.forEach(async child=>{
     const key = child.key; const raw = child.val();
-    await migrateAccountIfNeeded(key, raw);
     const a = normalizeAccount(key, raw);
     accountsCache[key]=a;
-    if(accountListEl){
-      const div = document.createElement('div');
-      div.className='accountItem';
-      div.innerText = a.alias + (a.fullName?(' - '+a.fullName):'');
-      div.onclick = ()=>{ currentAccountKey = key; document.querySelectorAll('#accountList .accountItem').forEach(el=>el.classList.remove('selected')); div.classList.add('selected'); loadAccountDetails(key); };
-      accountListEl.appendChild(div);
-    }
+    const div = document.createElement('div');
+    div.className='accountItem';
+    div.innerText = a.alias + (a.fullName?(' - '+a.fullName):'');
+    div.onclick = ()=>{ currentAccountKey=key; document.querySelectorAll('.accountItem').forEach(el=>el.classList.remove('selected')); div.classList.add('selected'); loadAccountDetails(key); };
+    userAccountList.appendChild(div);
   });
 }
 
-// ---------- Load Account Details ----------
-let listeners = [];
-function clearListeners(){ listeners.forEach(l=>l.off()); listeners = []; }
 async function loadAccountDetails(key){
   if(!key) return;
   clearListeners();
-  const acctRef = db.ref('accounts/'+key);
-  const balRef = acctRef.child('balance');
-  balRef.on('value', snap=>{ totalMoneyEl.innerText = snap.val() || 0; });
-  listeners.push(balRef);
-  const snap = await acctRef.get(); const raw = snap.val()||{};
-  const a = normalizeAccount(key, raw);
-  userRealNameEl.innerText = 'Name: ' + (a.fullName || '');
-  const histRef = acctRef.child('history');
-  histRef.on('value', s=>{
-    const val = s.val() || {};
+  const ref = db.ref('accounts/'+key);
+  ref.child('balance').on('value', snap=> totalMoneyEl.innerText = snap.val()||0);
+  ref.child('history').on('value', snap=>{
+    const val = snap.val()||{};
     historyListEl.innerHTML='';
-    const entries = Object.values(val).sort((x,y)=> (y.timestamp||0)-(x.timestamp||0));
-    entries.forEach(it=>{
+    Object.values(val).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).forEach(it=>{
       const div = document.createElement('div');
       div.className = 'history-item ' + (it.type==='add'?'add':'remove');
-      const comment = it.comment || it.reason || '';
       const ts = it.timestamp ? new Date(it.timestamp).toLocaleString() : '';
-      div.innerHTML = `<strong>${it.type==='add'?'+':'-'} ${it.amount} UGX</strong><div class='small'>${comment}</div><div class='small'>${ts}</div>`;
+      div.innerHTML = `<strong>${it.type==='add'?'+':'-'} ${it.amount} UGX</strong><div class='small'>${it.comment||it.reason||''}</div><div class='small'>${ts}</div>`;
       historyListEl.appendChild(div);
     });
   });
-  listeners.push(histRef);
+  const snap2 = await ref.get(); const a = normalizeAccount(key, snap2.val());
+  userRealNameEl.innerText = 'Name: ' + a.fullName;
 }
 
-// ---------- Admin Actions ----------
+// ---------- Admin Controls ----------
 createAccBtn.onclick = async ()=>{
   const fullName = (accFullName.value||'').trim();
   const alias = (accAlias.value||'').trim();
   const age = (accAge.value||'').trim();
   const gender = (accGender.value||'').trim();
   const pin = (accPin.value||'').trim();
-  if(!fullName || !alias || !pin) return alert('Full name, alias and PIN are required');
+  if(!fullName || !alias || !pin) return alert('Full name, alias, PIN required');
   const ref = db.ref('accounts').push();
-  await ref.set({ fullName, alias, age, gender, pin, balance:0 });
+  await ref.set({fullName,alias,age,gender,pin,balance:0});
   accFullName.value=''; accAlias.value=''; accAge.value=''; accGender.value=''; accPin.value='';
   loadAccountList();
 };
-
 editAccBtn.onclick = async ()=>{
-  if(!currentAccountKey) return alert('Select account to edit');
-  const raw = (await db.ref('accounts/'+currentAccountKey).get()).val() || {};
-  const fullName = prompt('Full name', raw.fullName||raw.fullname||'');
-  if(fullName===null) return;
+  if(!currentAccountKey) return alert('Select account'); 
+  const raw = (await db.ref('accounts/'+currentAccountKey).get()).val()||{};
+  const fullName = prompt('Full name', raw.fullName||''); if(fullName===null) return;
   const alias = prompt('Alias', raw.alias||''); if(alias===null) return;
   const age = prompt('Age', raw.age||''); if(age===null) return;
   const gender = prompt('Gender', raw.gender||''); if(gender===null) return;
-  await db.ref('accounts/'+currentAccountKey).update({ fullName, alias, age, gender });
-  alert('Account info updated');
-  loadAccountList();
+  await db.ref('accounts/'+currentAccountKey).update({fullName,alias,age,gender}); alert('Account updated'); loadAccountList();
 };
-
 deleteAccBtn.onclick = async ()=>{
-  if(!currentAccountKey) return alert('Select account first');
-  const ok = confirm('Delete this account and all its data?'); if(!ok) return;
+  if(!currentAccountKey) return alert('Select account'); if(!confirm('Delete account?')) return;
   await db.ref('accounts/'+currentAccountKey).remove(); currentAccountKey=null; loadAccountList();
 };
-
 resetUserPinBtn.onclick = async ()=>{
-  if(!currentAccountKey) return alert('Select account first');
-  const newPin = prompt('Enter new 4-digit PIN'); if(!newPin || newPin.length!==4) return alert('PIN must be 4 digits');
-  await db.ref('accounts/'+currentAccountKey+'/pin').set(newPin); alert('User PIN updated');
+  if(!currentAccountKey) return alert('Select account'); 
+  const pin = prompt('Enter new 4-digit PIN'); if(!pin||pin.length!==4) return alert('PIN must be 4 digits');
+  await db.ref('accounts/'+currentAccountKey+'/pin').set(pin); alert('User PIN updated');
 };
-
 resetAdminPassBtn.onclick = async ()=>{
-  const newPass = prompt('Enter new admin password'); if(!newPass) return; await db.ref('admin/password').set(newPass); alert('Admin password updated');
+  const newPass = prompt('Enter new admin password'); if(!newPass) return;
+  await db.ref('admin/password').set(newPass); alert('Admin password updated');
 };
-
 addMoneyBtn.onclick = async ()=>{
-  if(mode!=='admin') return; if(!currentAccountKey) return alert('Select account');
-  const amt = Number(amountInput.value); const comment = (reasonInput.value||'').trim();
-  if(!amt) return alert('Enter amount');
+  if(!currentAccountKey) return alert('Select account');
+  const amt = Number(amountInput.value); if(!amt) return alert('Enter amount');
   const ref = db.ref('accounts/'+currentAccountKey);
-  const balSnap = await ref.child('balance').get(); let bal = balSnap.exists()?balSnap.val():0; bal += amt; await ref.child('balance').set(bal);
-  await ref.child('history').push({ type:'add', amount:amt, comment, timestamp:Date.now() }); amountInput.value=''; reasonInput.value='';
+  const balSnap = await ref.child('balance').get(); let bal = balSnap.exists()?balSnap.val():0; bal+=amt;
+  await ref.child('balance').set(bal);
+  await ref.child('history').push({type:'add',amount:amt,comment:(reasonInput.value||''),timestamp:Date.now()});
+  amountInput.value=''; reasonInput.value='';
 };
-
 removeMoneyBtn.onclick = async ()=>{
-  if(mode!=='admin') return; if(!currentAccountKey) return alert('Select account');
-  const amt = Number(amountInput.value); const comment = (reasonInput.value||'').trim();
-  if(!amt) return alert('Enter amount');
+  if(!currentAccountKey) return alert('Select account');
+  const amt = Number(amountInput.value); if(!amt) return alert('Enter amount');
   const ref = db.ref('accounts/'+currentAccountKey);
-  const balSnap = await ref.child('balance').get(); let bal = balSnap.exists()?balSnap.val():0; bal -= amt; await ref.child('balance').set(bal);
-  await ref.child('history').push({ type:'remove', amount:amt, comment, timestamp:Date.now() }); amountInput.value=''; reasonInput.value='';
+  const balSnap = await ref.child('balance').get(); let bal = balSnap.exists()?balSnap.val():0; bal-=amt;
+  await ref.child('balance').set(bal);
+  await ref.child('history').push({type:'remove',amount:amt,comment:(reasonInput.value||''),timestamp:Date.now()});
+  amountInput.value=''; reasonInput.value='';
 };
 
-// ---------- Bible Verse Rotation ----------
-const verses = [
-  { ref:'Luke 2:10-11', text:'But the angel said to them, "Do not be afraid. I bring you good news that will cause great joy for all the people. Today in the town of David a Savior has been born to you; he is the Messiah, the Lord."' }
-];
-
-function showVerse(index){ const v = verses[index % verses.length]; document.getElementById('extraVerse').innerHTML = `<em>"${v.text}"</em><div class='small' style='margin-top:8px;'>${v.ref}</div>`; }
-showVerse(0);
-setInterval(()=>{ showVerse(0); }, 21600000);
-
-// ---------- Migration on Init ----------
-async function migrateAccountIfNeeded(key, raw){
-  const a = normalizeAccount(key, raw);
-  const updates = {};
-  if(!raw) raw = {};
-  if(!raw.fullName && a.fullName!=='Unknown') updates.fullName = a.fullName;
-  if(!raw.alias && a.alias) updates.alias = a.alias;
-  if(typeof raw.balance==='undefined') updates.balance = a.balance;
-  if(!raw.pin && a.pin) updates.pin = a.pin;
-  if(updates && Object.keys(updates).length>0){
-    await db.ref('accounts/'+key).update(updates);
-  }
+// ---------- User View ----------
+function enterUserView(){
+  showSegment(3); document.getElementById('adminControls').style.display='none';
+  loadAccountDetails(currentUserKey);
 }
 
+// ---------- Initial Migration ----------
 (async function init(){
   const snap = await db.ref('accounts').get();
   if(snap.exists()){
+    const updates = {};
     snap.forEach(child=>{
-      migrateAccountIfNeeded(child.key, child.val());
+      const k = child.key; const raw = child.val();
+      const norm = normalizeAccount(k, raw);
+      const need = {};
+      if(!raw) return;
+      if(!raw.fullName && norm.fullName!=='Unknown') need.fullName = norm.fullName;
+      if(!raw.alias && norm.alias) need.alias = norm.alias;
+      if(typeof raw.balance==='undefined') need.balance = norm.balance;
+      if(!raw.pin && norm.pin) need.pin = norm.pin;
+      if(Object.keys(need).length>0) updates['accounts/'+k] = need;
     });
+    if(Object.keys(updates).length>0) await db.ref().update(updates);
   }
 })();
 </script>
-
 </body>
 </html>
