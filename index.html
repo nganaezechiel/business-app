@@ -68,6 +68,11 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
 
 <!-- Main app area -->
 <div id="appScreen" style="display:none;">
+
+<div style="text-align:right; margin-bottom:10px;">
+  <button id="homeBtn" style="background:#34495e; color:#fff; padding:8px 12px; border-radius:6px; font-weight:700;">Home</button>
+</div>
+
   <div id="mainContainer">
 
     <!-- Segment 1: Accounts (left) -->
@@ -458,6 +463,25 @@ exportBtn.onclick = ()=> {
 
 // append button to Segment 1
 document.getElementById('segment1').appendChild(exportBtn);
+
+const homeBtn = document.getElementById('homeBtn');
+homeBtn.onclick = () => {
+  // Hide app screen
+  appScreen.style.display = 'none';
+
+  // Show welcome screen
+  welcome.style.display = 'block';
+
+  // Reset selections
+  currentAccountKey = null;
+  currentUserKey = null;
+
+  // Clear user PIN input
+  if(userPinInput) userPinInput.value = '';
+
+  // Clear selected class for accounts
+  document.querySelectorAll('.accountItem').forEach(el => el.classList.remove('selected'));
+};
 
 </script>
 </body>
