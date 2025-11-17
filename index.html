@@ -128,8 +128,10 @@ button { padding:10px; border:none; border-radius:8px; cursor:pointer; margin-to
     <div id="loginTitle">
       <img src="https://i.imgur.com/6wCqXwL.png" width="24" alt="key icon"> Login
     </div>
-    <button class="loginBtn" id="adminBtn"><img src="https://i.imgur.com/6wCqXwL.png" width="20"> Admin</button>
-    <button class="loginBtn" id="userBtn"><img src="https://i.imgur.com/OVxKZfA.png" width="20"> User</button>
+    <!-- Updated login buttons with IDs matching JS -->
+<button id="adminBtn" class="loginBtn"><img src="https://i.imgur.com/6wCqXwL.png" width="20"> Admin</button>
+<button id="userBtn" class="loginBtn"><img src="https://i.imgur.com/OVxKZfA.png" width="20"> User</button>
+
   </div>
 
   <!-- Welcome / Login Screens -->
@@ -254,9 +256,20 @@ const userPinBtn = document.getElementById('userPinBtn');
 const userBackBtn = document.getElementById('userBackBtn');
 const readonlyNotice = document.getElementById('readonlyNotice');
 
-// welcome buttons
-document.getElementById('adminBtn').onclick = ()=>{ mode='admin'; welcome.style.display='none'; adminLogin.style.display='block'; };
-document.getElementById('userBtn').onclick = ()=>{ mode='user'; welcome.style.display='none'; userSelect.style.display='block'; loadUserAccountList(); };
+// Welcome buttons: link new buttons to old logic
+document.getElementById('adminBtn').onclick = () => {
+    mode = 'admin';
+    document.getElementById('loginSection').style.display = 'none';
+    adminLogin.style.display = 'block';
+};
+
+document.getElementById('userBtn').onclick = () => {
+    mode = 'user';
+    document.getElementById('loginSection').style.display = 'none';
+    userSelect.style.display = 'block';
+    loadUserAccountList();
+};
+
 
 // ---------------- Admin login / reset ----------------
 adminLoginBtn.onclick = async ()=>{
