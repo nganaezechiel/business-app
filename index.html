@@ -1,72 +1,422 @@
-// ---------------- CSV Export ----------------
-function convertToCSV(objArray) {
-    const array = Array.isArray(objArray) ? objArray : Object.values(objArray);
-    if(array.length === 0) return '';
-    const keys = Object.keys(array[0]);
-    const csvRows = [];
-    csvRows.push(keys.join(',')); // header
-    array.forEach(item => {
-        const row = keys.map(k => {
-            let val = item[k] || '';
-            if(typeof val === 'string') val = val.replace(/"/g, '""'); // escape quotes
-            return `"${val}"`;
-        });
-        csvRows.push(row.join(','));
-    });
-    return csvRows.join('\n');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business App</title>
+<style>
+  body{font-family:sans-serif;margin:20px;}
+  .screen{display:none;}
+  .accountItem{padding:5px;margin:3px;cursor:pointer;border:1px solid #ccc;}
+  .accountItem.selected{background:#eef;}
+  .history-item.add{color:green;}
+  .history-item.remove{color:red;}
+  .small{font-size:0.8em;color:#555;}
+  #adminControls button{margin:3px;}
+</style>
+</head>
+<body>
+
+<!-- WELCOME SCREEN -->
+<div id="welcomeScreen" class="screen" style="display:block;">
+  <h2>Welcome</h2>
+  <button id="adminBtn">Admin</button>
+  <button id="userBtn">User</button>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="adminLogin" class="screen">
+  <h2>Admin Login</h2>
+  <input type="password" id="adminPassInput" placeholder="Password">
+  <button id="adminLoginBtn">Login</button>
+  <button id="adminResetButton">Reset Admin Password</button>
+</div>
+
+<!-- USER SELECT -->
+<div id="userSelect" class="screen">
+  <h2>Select Your Account</h2>
+  <div id="userAccountList"></div>
+  <button id="userBackBtn">Back</button>
+</div>
+
+<!-- USER PIN -->
+<div id="userPinScreen" class="screen">
+  <h2>Enter PIN</h2>
+  <input type="password" id="userPinInput" placeholder="PIN">
+  <button id="userPinBtn">Enter</button>
+  <button id="userBackBtn">Back</button>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen" class="screen">
+  <h2>Accounts</h2>
+  <div id="accountList"></div>
+  <div id="userRealName"></div>
+  <div>Total Balance: <span id="totalMoney">0</span> UGX</div>
+  <h3>History</h3>
+  <div id="historyList"></div>
+
+  <!-- ADMIN CONTROLS -->
+  <div id="adminControls" style="display:none;">
+    <h3>Admin Controls</h3>
+    <div>
+      <input placeholder="Full Name" id="accFullName">
+      <input placeholder="Alias" id="accAlias">
+      <input placeholder="Age" id="accAge">
+      <input placeholder="Gender" id="accGender">
+      <input placeholder="PIN" id="accPin">
+      <button id="createAccBtn">Create Account</button>
+    </div>
+    <div>
+      <button id="editAccBtn">Edit Selected</button>
+      <button id="deleteAccBtn">Delete Selected</button>
+      <button id="resetUserPinBtn">Reset User PIN</button>
+      <button id="resetAdminPassBtn">Reset Admin Password</button>
+    </div>
+    <div>
+      <input placeholder="Amount" id="amountInput">
+      <input placeholder="Reason" id="reasonInput">
+      <button id="addMoneyBtn">Add Money</button>
+      <button id="removeMoneyBtn">Remove Money</button>
+    </div>
+    <div>
+      <button id="exportSelectedBtn">Export Selected Account CSV</button>
+      <button id="exportAllBtn">Export All Accounts CSV</button>
+    </div>
+  </div>
+
+  <!-- BIBLE VERSE -->
+  <div id="extraVerse" style="margin-top:20px;font-style:italic;"></div>
+</div>
+
+<!-- Firebase JS SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ---------------- Firebase config ----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDbW2RuOnSr4H7Cl0_CLu99ckPbrh2y4Gw",
+  authDomain: "business-app-data.firebaseapp.com",
+  databaseURL: "https://business-app-data-default-rtdb.firebaseio.com",
+  projectId: "business-app-data",
+  storageBucket: "business-app-data.firebasestorage.app",
+  messagingSenderId: "64963134720",
+  appId: "1:64963134720:web:f8dd72fbe82342b1f91fe5",
+  measurementId: "G-21K1R3V7SH"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// App state
+let mode = null;
+let currentAccountKey = null;
+let currentUserKey = null;
+let accountsCache = {};
+
+// Elements
+const welcome = document.getElementById('welcomeScreen');
+const adminLogin = document.getElementById('adminLogin');
+const userSelect = document.getElementById('userSelect');
+const userPinScreen = document.getElementById('userPinScreen');
+const appScreen = document.getElementById('appScreen');
+
+const adminPassInput = document.getElementById('adminPassInput');
+const adminLoginBtn = document.getElementById('adminLoginBtn');
+const adminResetButton = document.getElementById('adminResetButton');
+
+const accountListEl = document.getElementById('accountList');
+const historyListEl = document.getElementById('historyList');
+const totalMoneyEl = document.getElementById('totalMoney');
+const userRealNameEl = document.getElementById('userRealName');
+
+const accFullName = document.getElementById('accFullName');
+const accAlias = document.getElementById('accAlias');
+const accAge = document.getElementById('accAge');
+const accGender = document.getElementById('accGender');
+const accPin = document.getElementById('accPin');
+
+const createAccBtn = document.getElementById('createAccBtn');
+const editAccBtn = document.getElementById('editAccBtn');
+const deleteAccBtn = document.getElementById('deleteAccBtn');
+const resetUserPinBtn = document.getElementById('resetUserPinBtn');
+const resetAdminPassBtn = document.getElementById('resetAdminPassBtn');
+
+const addMoneyBtn = document.getElementById('addMoneyBtn');
+const removeMoneyBtn = document.getElementById('removeMoneyBtn');
+const amountInput = document.getElementById('amountInput');
+const reasonInput = document.getElementById('reasonInput');
+
+const userAccountList = document.getElementById('userAccountList');
+const userPinInput = document.getElementById('userPinInput');
+const userPinBtn = document.getElementById('userPinBtn');
+const userBackBtns = document.querySelectorAll('#userBackBtn');
+
+const exportSelectedBtn = document.getElementById('exportSelectedBtn');
+const exportAllBtn = document.getElementById('exportAllBtn');
+
+// ---------------- Welcome Buttons ----------------
+document.getElementById('adminBtn').onclick = () => { 
+  mode='admin'; welcome.style.display='none'; adminLogin.style.display='block'; 
+};
+document.getElementById('userBtn').onclick = () => { 
+  mode='user'; welcome.style.display='none'; userSelect.style.display='block'; loadUserAccountList(); 
+};
+userBackBtns.forEach(btn => btn.onclick = () => {
+  userPinScreen.style.display='none'; userSelect.style.display='block';
+});
+
+// ---------------- Admin login / reset ----------------
+adminLoginBtn.onclick = async ()=> {
+  const pass = (adminPassInput.value||'').trim();
+  adminPassInput.value='';
+  if(!pass) return alert('Enter a password');
+  const snap = await db.ref('admin/password').get();
+  if(!snap.exists()){
+    await db.ref('admin/password').set(pass);
+    alert('Admin password created');
+    enterAdmin();
+    return;
+  }
+  if(snap.val()===pass){ enterAdmin(); }
+  else alert('Wrong admin password');
+};
+adminResetButton.onclick = async ()=> {
+  const ok = confirm('Reset admin password?');
+  if(!ok) return;
+  const newPass = prompt('Enter new admin password:');
+  if(!newPass) return;
+  await db.ref('admin/password').set(newPass);
+  alert('Admin password updated');
+};
+function enterAdmin(){
+  adminLogin.style.display='none';
+  appScreen.style.display='block';
+  document.getElementById('adminControls').style.display='block';
+  loadAccountList();
 }
 
-function downloadCSV(filename, csvContent) {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+// ---------------- User flow ----------------
+async function loadUserAccountList(){
+  const snap = await db.ref('accounts').get();
+  userAccountList.innerHTML='';
+  snap.forEach(child=>{
+    const a = normalizeAccount(child.key, child.val());
+    const div = document.createElement('div');
+    div.className='accountItem';
+    div.innerText = a.alias || ('acct-'+child.key.slice(-4));
+    div.onclick = ()=>{ currentAccountKey = child.key; userSelect.style.display='none'; userPinScreen.style.display='block'; };
+    userAccountList.appendChild(div);
+  });
+}
+userPinBtn.onclick = async ()=>{
+  const pin = (userPinInput.value||'').trim(); userPinInput.value='';
+  if(!pin) return alert('Enter PIN');
+  const snap = await db.ref('accounts/'+currentAccountKey+'/pin').get();
+  if(!snap.exists()) return alert('Account pin not set');
+  if(snap.val()===pin){ currentUserKey = currentAccountKey; enterUserView(); }
+  else alert('Incorrect PIN');
+};
+function enterUserView(){
+  userPinScreen.style.display='none';
+  appScreen.style.display='block';
+  document.getElementById('adminControls').style.display='none';
+  addMoneyBtn.style.display='none'; removeMoneyBtn.style.display='none';
+  loadAccountList();
+  loadAccountDetails(currentUserKey);
 }
 
-// ---------------- Export Selected Account ----------------
-document.getElementById('exportCSVBtn').onclick = async () => {
-    if(!currentAccountKey) return alert('Select an account first');
-    const snap = await db.ref('accounts/' + currentAccountKey).get();
-    if(!snap.exists()) return alert('No data for this account');
-    const data = snap.val();
-    // flatten account + history
-    const history = data.history || {};
-    const csvData = Object.entries(history).map(([key, entry]) => ({
-        type: entry.type,
-        amount: entry.amount,
-        reason: entry.comment || entry.reason || '',
-        timestamp: entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '',
-        accountAlias: data.alias || '',
-        fullName: data.fullName || ''
-    }));
-    const csv = convertToCSV(csvData);
-    downloadCSV(`${data.alias || currentAccountKey}_history.csv`, csv);
+// ---------------- Normalize / migrate ----------------
+function normalizeAccount(key, raw){
+  const a = raw || {};
+  return {
+    fullName: a.fullName || a.fullname || a.name || a.full_name || 'Unknown',
+    alias: a.alias || a.aliasName || a.nickname || ('acct-'+key.slice(-4)),
+    age: a.age || a.Age || '',
+    gender: a.gender || a.sex || '',
+    pin: a.pin || a.PIN || '',
+    balance: (typeof a.balance!=='undefined')?a.balance:((typeof a.total!=='undefined')?a.total:((typeof a.AccountBalance!=='undefined')?a.AccountBalance:0))
+  };
+}
+async function migrateAccountIfNeeded(key, raw){
+  const a = normalizeAccount(key, raw);
+  const updates = {};
+  if(!raw) raw = {};
+  if(!raw.fullName && a.fullName!=='Unknown') updates.fullName = a.fullName;
+  if(!raw.alias && a.alias) updates.alias = a.alias;
+  if(typeof raw.balance==='undefined') updates.balance = a.balance;
+  if(!raw.pin && a.pin) updates.pin = a.pin;
+  if(Object.keys(updates).length>0){
+    await db.ref('accounts/'+key).update(updates);
+  }
+}
+
+// ---------------- Load account list ----------------
+async function loadAccountList(){
+  const snap = await db.ref('accounts').get();
+  accountsCache = {};
+  accountListEl.innerHTML='';
+  snap.forEach(async child=>{
+    const key = child.key; const raw = child.val();
+    await migrateAccountIfNeeded(key, raw);
+    const a = normalizeAccount(key, raw);
+    accountsCache[key]=a;
+    const div = document.createElement('div');
+    div.className='accountItem';
+    div.innerText = a.alias + (a.fullName?(' - '+a.fullName):'');
+    div.onclick = ()=>{ currentAccountKey=key; document.querySelectorAll('#accountList .accountItem').forEach(el=>el.classList.remove('selected')); div.classList.add('selected'); loadAccountDetails(key); };
+    accountListEl.appendChild(div);
+  });
+}
+
+// ---------------- Account details ----------------
+let listeners = [];
+function clearListeners(){ listeners.forEach(l=>l.off()); listeners = []; }
+async function loadAccountDetails(key){
+  if(!key) return;
+  clearListeners();
+  const acctRef = db.ref('accounts/'+key);
+  const balRef = acctRef.child('balance');
+  balRef.on('value', snap=>{ totalMoneyEl.innerText = snap.val() || 0; });
+  listeners.push(balRef);
+
+  const snap = await acctRef.get(); const raw = snap.val()||{};
+  const a = normalizeAccount(key, raw);
+  userRealNameEl.innerText = 'Name: '+(a.fullName||'');
+
+  const histRef = acctRef.child('history');
+  histRef.on('value', s=>{
+    const val = s.val() || {};
+    historyListEl.innerHTML='';
+    const entries = Object.values(val).sort((x,y)=> (y.timestamp||0)-(x.timestamp||0));
+    entries.forEach(it=>{
+      const div = document.createElement('div');
+      div.className='history-item '+(it.type==='add'?'add':'remove');
+      const comment = it.comment || it.reason || '';
+      const ts = it.timestamp ? new Date(it.timestamp).toLocaleString() : '';
+      div.innerHTML = `<strong>${it.type==='add'?'+':'-'} ${it.amount} UGX</strong><div class='small'>${comment}</div><div class='small'>${ts}</div>`;
+      historyListEl.appendChild(div);
+    });
+  });
+  listeners.push(histRef);
+}
+
+// ---------------- Admin actions ----------------
+createAccBtn.onclick = async ()=>{
+  const fullName = (accFullName.value||'').trim();
+  const alias = (accAlias.value||'').trim();
+  const age = (accAge.value||'').trim();
+  const gender = (accGender.value||'').trim();
+  const pin = (accPin.value||'').trim();
+  if(!fullName || !alias || !pin) return alert('Full name, alias and PIN are required');
+  const ref = db.ref('accounts').push();
+  await ref.set({ fullName, alias, age, gender, pin, balance:0 });
+  accFullName.value=''; accAlias.value=''; accAge.value=''; accGender.value=''; accPin.value='';
+  loadAccountList();
+};
+editAccBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select account to edit');
+  const raw = (await db.ref('accounts/'+currentAccountKey).get()).val() || {};
+  const fullName = prompt('Full name', raw.fullName||raw.fullname||''); if(fullName===null) return;
+  const alias = prompt('Alias', raw.alias||''); if(alias===null) return;
+  const age = prompt('Age', raw.age||''); if(age===null) return;
+  const gender = prompt('Gender', raw.gender||''); if(gender===null) return;
+  await db.ref('accounts/'+currentAccountKey).update({ fullName, alias, age, gender });
+  alert('Account info updated'); loadAccountList();
+};
+deleteAccBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select account first');
+  const ok = confirm('Delete this account and all its data?'); if(!ok) return;
+  await db.ref('accounts/'+currentAccountKey).remove(); currentAccountKey=null; loadAccountList();
+};
+resetUserPinBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select account first');
+  const newPin = prompt('Enter new 4-digit PIN'); if(!newPin || newPin.length!==4) return alert('PIN must be 4 digits');
+  await db.ref('accounts/'+currentAccountKey+'/pin').set(newPin); alert('User PIN updated');
+};
+resetAdminPassBtn.onclick = async ()=>{
+  const newPass = prompt('Enter new admin password'); if(!newPass) return; await db.ref('admin/password').set(newPass); alert('Admin password updated');
+};
+addMoneyBtn.onclick = async ()=>{
+  if(mode!=='admin') return; if(!currentAccountKey) return alert('Select account');
+  const amt = Number(amountInput.value); const comment = (reasonInput.value||'').trim();
+  if(!amt) return alert('Enter amount');
+  const ref = db.ref('accounts/'+currentAccountKey);
+  const balSnap = await ref.child('balance').get(); let bal = balSnap.exists()?balSnap.val():0; bal += amt; await ref.child('balance').set(bal);
+  await ref.child('history').push({ type:'add', amount:amt, comment, timestamp:Date.now() }); amountInput.value=''; reasonInput.value='';
+};
+removeMoneyBtn.onclick = async ()=>{
+  if(mode!=='admin') return; if(!currentAccountKey) return alert('Select account');
+  const amt = Number(amountInput.value); const comment = (reasonInput.value||'').trim();
+  if(!amt) return alert('Enter amount');
+  const ref = db.ref('accounts/'+currentAccountKey);
+  const balSnap = await ref.child('balance').get(); let bal = balSnap.exists()?balSnap.val():0; bal -= amt; await ref.child('balance').set(bal);
+  await ref.child('history').push({ type:'remove', amount:amt, comment, timestamp:Date.now() }); amountInput.value=''; reasonInput.value='';
 };
 
-// ---------------- Export All Accounts ----------------
-document.getElementById('exportAllCSVBtn').onclick = async () => {
-    const snap = await db.ref('accounts').get();
-    if(!snap.exists()) return alert('No accounts found');
-    const allData = [];
-    snap.forEach(child => {
-        const data = child.val();
-        const history = data.history || {};
-        Object.entries(history).forEach(([key, entry]) => {
-            allData.push({
-                type: entry.type,
-                amount: entry.amount,
-                reason: entry.comment || entry.reason || '',
-                timestamp: entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '',
-                accountAlias: data.alias || '',
-                fullName: data.fullName || ''
-            });
-        });
+// ---------------- CSV export ----------------
+function downloadCSV(filename, rows) {
+  const csvContent = rows.map(e=>e.map(a=>`"${a}"`).join(",")).join("\n");
+  const blob = new Blob([csvContent], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+exportSelectedBtn.onclick = async ()=>{
+  if(!currentAccountKey) return alert('Select an account first');
+  const snap = await db.ref('accounts/'+currentAccountKey).get();
+  if(!snap.exists()) return alert('No data');
+  const a = snap.val();
+  const rows = [["FullName","Alias","Age","Gender","Balance"]];
+  rows.push([a.fullName||'', a.alias||'', a.age||'', a.gender||'', a.balance||0]);
+  const histSnap = await db.ref('accounts/'+currentAccountKey+'/history').get();
+  if(histSnap.exists()){
+    rows.push([]);
+    rows.push(["History Type","Amount","Comment","Timestamp"]);
+    Object.values(histSnap.val()).forEach(h=>{
+      rows.push([h.type||'', h.amount||'', h.comment||'', h.timestamp?new Date(h.timestamp).toLocaleString():'']);
     });
-    const csv = convertToCSV(allData);
-    downloadCSV(`all_accounts_history.csv`, csv);
+  }
+  downloadCSV((a.alias||'account')+'.csv', rows);
 };
+
+exportAllBtn.onclick = async ()=>{
+  const snap = await db.ref('accounts').get();
+  if(!snap.exists()) return alert('No data');
+  const rows = [["FullName","Alias","Age","Gender","Balance"]];
+  snap.forEach(child=>{
+    const a = child.val();
+    rows.push([a.fullName||'', a.alias||'', a.age||'', a.gender||'', a.balance||0]);
+  });
+  downloadCSV('all_accounts.csv', rows);
+};
+
+// ---------------- Bible verses ----------------
+const verses = [
+  { ref:'Luke 2:10-11', text:'But the angel said to them, "Do not be afraid. I bring you good news that will cause great joy for all the people. Today in the town of David a Savior has been born to you; he is the Messiah, the Lord."' }
+];
+function showVerse(index){ const v = verses[index % verses.length]; document.getElementById('extraVerse').innerHTML = `<em>"${v.text}"</em><div class='small' style='margin-top:8px;'>${v.ref}</div>`; }
+showVerse(0);
+
+// ---------------- Init ----------------
+(async function init(){
+  const snap = await db.ref('accounts').get();
+  if(snap.exists()){
+    const updates = {};
+    snap.forEach(child=>{
+      const k = child.key; const raw = child.val(); const norm = normalizeAccount(k, raw);
+      const need = {};
+      if(!raw) return;
+      if(!raw.fullName && norm.fullName!=='Unknown') need.fullName = norm.fullName;
+      if(!raw.alias && norm.alias) need.alias = norm.alias;
+      if(typeof raw.balance==='undefined') need.balance = norm.balance;
+      if(!raw.pin && norm.pin) need.pin = norm.pin;
+      if(Object.keys(need).length>0) updates['accounts/'+k] = need;
+    });
+    if(Object.keys(updates).length>0) await db.ref().update(updates);
+  }
+})();
+</script>
+</body>
+</html>
