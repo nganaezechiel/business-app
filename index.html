@@ -306,14 +306,30 @@ async function userPinHandler(){
   if(snap.val()===pin){ currentUserKey=currentAccountKey; enterUserView(); }
   else alert('Incorrect PIN');
 }
-function enterUserView(){
+async function enterUserView(){
   document.getElementById('userPinScreen').style.display='none'; 
   appScreen.style.display='block';
   document.getElementById('adminControls').style.display='none';
-  amountInput.style.display='none'; reasonInput.style.display='none';
-  addMoneyBtn.style.display='none'; removeMoneyBtn.style.display='none';
+  amountInput.style.display='none'; 
+  reasonInput.style.display='none';
+  addMoneyBtn.style.display='none'; 
+  removeMoneyBtn.style.display='none';
   readonlyNotice.style.display='block';
-  loadAccountList(); loadAccountDetails(currentUserKey);
+
+  // Load only the current user's account into cache
+  const snap = await db.ref('accounts/' + currentUserKey).get();
+  const acc = normalizeAccount(currentUserKey, snap.val());
+  accountsCache = {};
+  accountsCache[currentUserKey] = acc;
+
+  loadAccountDetails(currentUserKey);
+
+  // Show only the logged-in user's alias in the accounts panel
+  accountListEl.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'accountItem selected';
+  div.innerText = acc.alias;
+  accountListEl.appendChild(div);
 }
 
 // ---------------- Accounts ----------------
